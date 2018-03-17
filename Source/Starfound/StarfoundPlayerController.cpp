@@ -1,10 +1,21 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "StarfoundPlayerController.h"
+#include "DrawDebugHelpers.h"
 
-
-void AStarfoundPlayerController::StartCreating(TSubclassOf<ABlockActor> BlockClass)
+void AStarfoundPlayerController::StartConstruct(TSubclassOf<ABlockActor> BlockClass)
 {
+	if (!ensure(BlockClass.Get()))
+	{
+		return;
+	}
+
+	if (CreatingBlockActor)
+	{
+		CreatingBlockActor->Destroy();
+		CreatingBlockActor = nullptr;
+	}
+
 	CreatingBlockClass = BlockClass;
 
 	FActorSpawnParameters SpawnParameters;
@@ -12,11 +23,13 @@ void AStarfoundPlayerController::StartCreating(TSubclassOf<ABlockActor> BlockCla
 
 	CreatingBlockActor = GetWorld()->SpawnActor<ABlockActor>(BlockClass, FTransform::Identity, SpawnParameters);
 	CreatingBlockActor->GetRootComponent()->DestroyPhysicsState();
+
+	ActiveToolType = EToolType::Construct;
 }
 
-void AStarfoundPlayerController::CreateBlockOnCurrentPosition()
+void AStarfoundPlayerController::ConstructBlock()
 {
-	if (!ensure(CreatingBlockActor) || !ensure(CreatingBlockClass))
+	if (!ensure(ActiveToolType == EToolType::Construct) || !ensure(CreatingBlockActor) || !ensure(CreatingBlockClass))
 	{
 		return;
 	}
@@ -27,11 +40,45 @@ void AStarfoundPlayerController::CreateBlockOnCurrentPosition()
 	ABlockActor* NewBlockActor = GetWorld()->SpawnActor<ABlockActor>(CreatingBlockClass, CreatingBlockActor->GetActorTransform(), SpawnParameters);
 }
 
+void AStarfoundPlayerController::StartDestruct()
+{
+	ActiveToolType = EToolType::Destruct;
+
+	if (CreatingBlockActor)
+	{
+		CreatingBlockActor->Destroy();
+		CreatingBlockActor = nullptr;
+	}
+}
+
+void AStarfoundPlayerController::DestructBlock()
+{
+	if (!ensure(ActiveToolType == EToolType::Destruct))
+	{
+		return;
+	}
+
+	FHitResult HitResult;
+	bool bHitFound = GetHitResultUnderCursor(ECC_WorldStatic, true, HitResult);
+
+	if (bHitFound && HitResult.Actor.IsValid() && HitResult.Actor->IsA(ABlockActor::StaticClass()))
+	{
+		HitResult.Actor->Destroy();
+	}
+}
+
+void AStarfoundPlayerController::BeginPlay()
+{
+	ActiveToolType = EToolType::None;
+
+	Super::BeginPlay();
+}
+
 void AStarfoundPlayerController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if (CreatingBlockActor)
+	if (ActiveToolType == EToolType::Construct)
 	{
 		float MousePositionX, MousePositionY;
 		const bool bValidMousePosition = GetMousePosition(MousePositionX, MousePositionY);
@@ -54,17 +101,44 @@ void AStarfoundPlayerController::Tick(float DeltaSeconds)
 			}
 		}
 	}
+	else if (ActiveToolType == EToolType::Destruct)
+	{
+		FHitResult HitResult;
+		bool bHitFound = GetHitResultUnderCursor(ECC_WorldStatic, true, HitResult);
+
+		if (bHitFound && HitResult.Actor.IsValid() && HitResult.Actor->IsA(ABlockActor::StaticClass()))
+		{
+			DrawDebugBox(GetWorld(), HitResult.Actor->GetActorLocation(), FVector(50, 50, 50), FColor::White);
+		}
+	}
 }
 
 bool AStarfoundPlayerController::InputKey(FKey Key, EInputEvent EventType, float AmountDepressed, bool bGamepad)
 {
 	Super::InputKey(Key, EventType, AmountDepressed, bGamepad);
 
-	if (Key == EKeys::LeftMouseButton && CreatingBlockActor)
+	if (Key == EKeys::C)
 	{
-		CreateBlockOnCurrentPosition();
+		ensure(CreatingBlockClass);
+		StartConstruct(CreatingBlockClass);
+	}
+	else if (Key == EKeys::D)
+	{
+		StartDestruct();
+	}
 
-		return true;
+	if (Key == EKeys::LeftMouseButton)
+	{
+		if (ActiveToolType == EToolType::Construct)
+		{
+			ConstructBlock();
+			return true;
+		}
+		else if (ActiveToolType == EToolType::Destruct)
+		{
+			DestructBlock();
+			return true;
+		}
 	}
 
 	return false;

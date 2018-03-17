@@ -7,6 +7,15 @@
 #include "BlockActor.h"
 #include "StarfoundPlayerController.generated.h"
 
+UENUM()
+enum class EToolType
+{
+	None,
+	Construct,
+	Destruct
+};
+
+
 /**
  * 
  */
@@ -17,17 +26,27 @@ class STARFOUND_API AStarfoundPlayerController : public APlayerController
 	
 public:
 
-	UFUNCTION(BlueprintCallable)
-	void StartCreating(TSubclassOf<ABlockActor> BlockClass);
-
-	UFUNCTION(BlueprintCallable)
-	void CreateBlockOnCurrentPosition();
-
+	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual bool InputKey(FKey Key, EInputEvent EventType, float AmountDepressed, bool bGamepad) override;
+	
+	UFUNCTION(BlueprintCallable)
+	void StartConstruct(TSubclassOf<ABlockActor> BlockClass);
+
+	UFUNCTION(BlueprintCallable)
+	void ConstructBlock();
+
+	UFUNCTION(BlueprintCallable)
+	void StartDestruct();
+
+	UFUNCTION(BlueprintCallable)
+	void DestructBlock();
 
 private:
 	
+	UPROPERTY()
+	EToolType ActiveToolType;
+
 	UPROPERTY()
 	TSubclassOf<ABlockActor> CreatingBlockClass;
 
