@@ -22,7 +22,15 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+};
 
-	
-	
+
+UCLASS()
+class UBlockGenerator : public UObject
+{
+	GENERATED_BODY()
+
+public:
+
+	void GenerateRandomBlockWorld(UWorld* World, const TArray<TSubclassOf<ABlockActor>>& BlockClasses);
 };

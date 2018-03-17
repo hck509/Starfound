@@ -13,3 +13,11 @@ AStarfoundGameMode::AStarfoundGameMode()
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
 }
+
+void AStarfoundGameMode::StartPlay()
+{
+	Super::StartPlay();
+
+	BlockGenerator = NewObject<UBlockGenerator>();
+	BlockGenerator->GenerateRandomBlockWorld(GetWorld(), BlockClasses);
+}
