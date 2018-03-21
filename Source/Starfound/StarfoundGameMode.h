@@ -16,6 +16,7 @@ public:
 	AStarfoundGameMode();
 
 	virtual void StartPlay() override;
+	virtual void Tick(float DeltaTime) override;
 
 private:
 
@@ -24,4 +25,7 @@ private:
 
 	UPROPERTY(Transient)
 	UBlockGenerator* BlockGenerator;
+
+	UPROPERTY(Transient)
+	UBlockActorScene* BlockActorScene;
 };

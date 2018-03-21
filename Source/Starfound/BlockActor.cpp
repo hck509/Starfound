@@ -1,14 +1,15 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "BlockActor.h"
-
+#include "DrawDebugHelpers.h"
+#include "Engine/Engine.h"
 
 // Sets default values
 ABlockActor::ABlockActor()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	bTemporal = false;
 }
 
 // Called when the game starts or when spawned
@@ -16,9 +17,51 @@ void ABlockActor::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	if (!bTemporal)
+	{
+		UBlockActorScene* BlockScene = Cast<UBlockActorScene>(GetWorld()->GetWorldSettings()->GetAssetUserDataOfClass(UBlockActorScene::StaticClass()));
+		if (ensure(BlockScene))
+		{
+			BlockScene->RegisterBlockActor(this);
+		}
+	}
 }
 
-// Called every frame
+void ABlockActor::PostRegisterAllComponents()
+{
+	Super::PostRegisterAllComponents();
+
+	GetRootComponent()->TransformUpdated.AddUObject(this, &ABlockActor::TransformUpdated);
+}
+
+void ABlockActor::PostUnregisterAllComponents()
+{
+	Super::PostUnregisterAllComponents();
+
+	if (GetRootComponent())
+	{
+		GetRootComponent()->TransformUpdated.RemoveAll(this);
+	}
+
+	UBlockActorScene* BlockScene = GetWorld() ? Cast<UBlockActorScene>(GetWorld()->GetWorldSettings()->GetAssetUserDataOfClass(UBlockActorScene::StaticClass())) : nullptr;
+	if (BlockScene)
+	{
+		BlockScene->UnRegisterBlockActor(this);
+	}
+}
+
+void ABlockActor::TransformUpdated(USceneComponent* RootComponent, EUpdateTransformFlags UpdateTransformFlags, ETeleportType Teleport)
+{
+	if (!bTemporal)
+	{
+		UBlockActorScene* BlockScene = Cast<UBlockActorScene>(GetWorld()->GetWorldSettings()->GetAssetUserDataOfClass(UBlockActorScene::StaticClass()));
+		if (ensure(BlockScene))
+		{
+			BlockScene->RegisterBlockActor(this);
+		}
+	}
+}
+
 void ABlockActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -64,4 +107,68 @@ void UBlockGenerator::GenerateRandomBlockWorld(UWorld* World, const TArray<TSubc
 			World->SpawnActor<ABlockActor>(BlockClass, FTransform(FVector(0, Y * 100, Z * 100)), ActorSpawnParam);
 		}
 	}
+}
+
+void UBlockActorScene::InitializeGrid(float InGridCellSize, int32 InGridX, int32 InGridY)
+{
+	GridCellSize = InGridCellSize;
+	GridX = InGridX;
+	GridY = InGridY;
+
+	// *4 for negative area
+	const int32 NumCols = (GridX * 2) + 1;
+	const int32 NumRows = (GridY * 2) + 1;
+
+	BlockActors.AddZeroed(NumCols * NumRows);
+}
+
+void UBlockActorScene::RegisterBlockActor(ABlockActor* BlockActor)
+{
+	BlockActors.Remove(BlockActor);
+
+	const int32 X = FMath::RoundToInt(BlockActor->GetActorLocation().Y / GridCellSize);
+	const int32 Y = FMath::RoundToInt(BlockActor->GetActorLocation().Z / GridCellSize);
+
+	if (X < -GridX || X > GridX)
+	{
+		ensure(0);
+		return;
+	}
+
+	if (Y < -GridY || Y > GridY)
+	{
+		ensure(0);
+		return;
+	}
+
+	const int32 OriginX = -GridX;
+	const int32 OriginY = -GridY;
+	const int32 XFromOrigin = X - OriginX;
+	const int32 YFromOrigin = Y - OriginY;
+	const int32 NumCols = (GridX * 2) + 1;
+	const int32 Index = (XFromOrigin * NumCols) + YFromOrigin;
+
+	BlockActors[Index] = BlockActor;
+}
+
+void UBlockActorScene::UnRegisterBlockActor(ABlockActor* BlockActor)
+{
+	BlockActors.Remove(BlockActor);
+}
+
+void UBlockActorScene::DebugDraw() const
+{
+	int32 NumActiveBlocks = 0;
+
+	const int32 NumBlocks = BlockActors.Num();
+	for (int32 Index = 0; Index < NumBlocks; ++Index)
+	{
+		if (BlockActors[Index])
+		{
+			++NumActiveBlocks;
+		}
+	}
+
+	GEngine->AddOnScreenDebugMessage((uint64)(this + 0), 0, FColor::White,
+		FString::Printf(TEXT("Active Blocks: %4d"), NumActiveBlocks));
 }

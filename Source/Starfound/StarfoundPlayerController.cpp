@@ -18,10 +18,10 @@ void AStarfoundPlayerController::StartConstruct(TSubclassOf<ABlockActor> BlockCl
 
 	CreatingBlockClass = BlockClass;
 
-	FActorSpawnParameters SpawnParameters;
-	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	CreatingBlockActor = GetWorld()->SpawnActorDeferred<ABlockActor>(BlockClass, FTransform::Identity, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+	CreatingBlockActor->SetTemporal(true);
+	CreatingBlockActor->FinishSpawning(FTransform::Identity);
 
-	CreatingBlockActor = GetWorld()->SpawnActor<ABlockActor>(BlockClass, FTransform::Identity, SpawnParameters);
 	CreatingBlockActor->GetRootComponent()->DestroyPhysicsState();
 
 	ActiveToolType = EToolType::Construct;

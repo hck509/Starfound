@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Engine/AssetUserData.h"
 #include "BlockActor.generated.h"
 
 UCLASS()
@@ -12,16 +13,22 @@ class STARFOUND_API ABlockActor : public AActor
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	ABlockActor();
 
-protected:
-	// Called when the game starts or when spawned
+public:
 	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	virtual void PostRegisterAllComponents() override;
+	virtual void PostUnregisterAllComponents() override;
+
+	void SetTemporal(bool bInTemporal) { bTemporal = bInTemporal; }
+	bool IsTemporal() const { return bTemporal; }
+
+private:
+	void TransformUpdated(USceneComponent* RootComponent, EUpdateTransformFlags UpdateTransformFlags, ETeleportType Teleport);
+
+	bool bTemporal;
 };
 
 
@@ -33,4 +40,31 @@ class UBlockGenerator : public UObject
 public:
 
 	void GenerateRandomBlockWorld(UWorld* World, const TArray<TSubclassOf<ABlockActor>>& BlockClasses);
+};
+
+
+UCLASS()
+class UBlockActorScene : public UAssetUserData
+{
+	GENERATED_BODY()
+
+public:
+
+	void InitializeGrid(float InGridCellSize, int32 InGridX, int32 InGridY);
+
+	void RegisterBlockActor(ABlockActor* BlockActor);
+	void UnRegisterBlockActor(ABlockActor* BlockActor);
+
+	void DebugDraw() const;
+
+private:
+
+	float GridCellSize;
+
+	// Grid count. Inclusive
+	int32 GridX;
+	int32 GridY;
+
+	UPROPERTY()
+	TArray<ABlockActor*> BlockActors;
 };

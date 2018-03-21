@@ -12,12 +12,25 @@ AStarfoundGameMode::AStarfoundGameMode()
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
+
+	PrimaryActorTick.bCanEverTick = true;
 }
 
 void AStarfoundGameMode::StartPlay()
 {
+	BlockActorScene = NewObject<UBlockActorScene>();
+	GetWorld()->GetWorldSettings()->AddAssetUserData(BlockActorScene);
+	BlockActorScene->InitializeGrid(100.0f, 100, 100);
+
 	Super::StartPlay();
 
 	BlockGenerator = NewObject<UBlockGenerator>();
 	BlockGenerator->GenerateRandomBlockWorld(GetWorld(), BlockClasses);
+}
+
+void AStarfoundGameMode::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	BlockActorScene->DebugDraw();
 }
