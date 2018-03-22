@@ -55,6 +55,18 @@ public:
 	void RegisterBlockActor(ABlockActor* BlockActor);
 	void UnRegisterBlockActor(ABlockActor* BlockActor);
 
+	float GetGridCellSize() const { return GridCellSize; }
+	int32 GetGridX() const { return GridX; }
+	int32 GetGridY() const { return GridY; }
+	int32 GetNumGridX() const { return (GridX * 2) + 1; }
+	int32 GetNumGridY() const { return (GridY * 2) + 1; }
+	int32 GetOriginX() const { return -GridX; }
+	int32 GetOriginY() const { return -GridY; }
+	int32 OriginSpaceToWorldSpaceX(int32 InX) { return InX + GetOriginX(); }
+	int32 OriginSpaceToWorldSpaceY(int32 InY) { return InY + GetOriginY(); }
+
+	ABlockActor* GetBlock(int32 X, int32 Y) const;
+
 	void DebugDraw() const;
 
 private:

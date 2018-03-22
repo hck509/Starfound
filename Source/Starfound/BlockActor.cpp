@@ -141,8 +141,8 @@ void UBlockActorScene::RegisterBlockActor(ABlockActor* BlockActor)
 		return;
 	}
 
-	const int32 OriginX = -GridX;
-	const int32 OriginY = -GridY;
+	const int32 OriginX = GetOriginX();
+	const int32 OriginY = GetOriginY();
 	const int32 XFromOrigin = X - OriginX;
 	const int32 YFromOrigin = Y - OriginY;
 	const int32 NumCols = (GridX * 2) + 1;
@@ -154,6 +154,30 @@ void UBlockActorScene::RegisterBlockActor(ABlockActor* BlockActor)
 void UBlockActorScene::UnRegisterBlockActor(ABlockActor* BlockActor)
 {
 	BlockActors.Remove(BlockActor);
+}
+
+ABlockActor* UBlockActorScene::GetBlock(int32 X, int32 Y) const
+{
+	if (X < -GridX || X > GridX)
+	{
+		ensure(0);
+		return nullptr;
+	}
+
+	if (Y < -GridY || Y > GridY)
+	{
+		ensure(0);
+		return nullptr;
+	}
+
+	const int32 OriginX = -GridX;
+	const int32 OriginY = -GridY;
+	const int32 XFromOrigin = X - OriginX;
+	const int32 YFromOrigin = Y - OriginY;
+	const int32 NumCols = (GridX * 2) + 1;
+	const int32 Index = (XFromOrigin * NumCols) + YFromOrigin;
+
+	return BlockActors[Index];
 }
 
 void UBlockActorScene::DebugDraw() const

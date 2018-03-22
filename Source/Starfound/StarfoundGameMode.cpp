@@ -26,6 +26,8 @@ void AStarfoundGameMode::StartPlay()
 
 	BlockGenerator = NewObject<UBlockGenerator>();
 	BlockGenerator->GenerateRandomBlockWorld(GetWorld(), BlockClasses);
+
+	Navigation = GetWorld()->SpawnActor<ANavigation>();
 }
 
 void AStarfoundGameMode::Tick(float DeltaTime)
@@ -33,4 +35,5 @@ void AStarfoundGameMode::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	BlockActorScene->DebugDraw();
+	Navigation->DebugDraw();
 }

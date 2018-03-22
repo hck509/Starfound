@@ -14,6 +14,10 @@ class ANavigation : public AActor
 public:
 	ANavigation();
 
+	virtual void Tick(float DeltaSeconds) override;
+
+	void DebugDraw() const;
+
 private:
 	TUniquePtr<FSideScrollGraph> Graph;
 	TUniquePtr<MicroPanther::MicroPather> MicroPather;

@@ -8,8 +8,13 @@ class FSideScrollGraph : public MicroPanther::Graph
 public:
 	FSideScrollGraph();
 
-	// Heights of each grid cell. index = X + (Y * GridCountX). -1 means blocked.
-	void SetHeights(const TArray<int32>& NewHeights, int32 NewGridCountX, int32 NewGridCountY) { Heights = NewHeights; GridCountX = NewGridCountX; GridCountY = NewGridCountY; }
+	void InitializeGrid(int32 InGridCountX, int32 InGridCountY);
+
+	void SetHeight(int32 X, int32 Y, int32 NewHeight);
+
+	int32 GetGridCountX() const { return GridCountX; }
+	int32 GetGridCountY() const { return GridCountY; }
+	int32 GetHeight(int32 X, int32 Y) const;
 
 	virtual float LeastCostEstimate(void* StartState, void* EndState) override;
 	virtual void AdjacentCost(void* State, MP_VECTOR<MicroPanther::StateCost>* AdjacentCosts) override;
@@ -19,7 +24,6 @@ public:
 	void* Vec2ToState(const FIntPoint& Position) const;
 
 private:
-	int GetHeight(int32 X, int32 Y) const;
 
 	int32 GridCountX;
 	int32 GridCountY;

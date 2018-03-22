@@ -6,6 +6,25 @@ FSideScrollGraph::FSideScrollGraph()
 	GridCountY = 0;
 }
 
+void FSideScrollGraph::InitializeGrid(int32 InGridCountX, int32 InGridCountY)
+{
+	GridCountX = InGridCountX;
+	GridCountY = InGridCountY;
+
+	Heights.Init(0, GridCountX * GridCountY);
+}
+
+void FSideScrollGraph::SetHeight(int32 X, int32 Y, int32 NewHeight)
+{
+	if (X < 0 || X > GridCountX || Y < 0 || Y > GridCountY)
+	{
+		ensure(0);
+		return;
+	}
+
+	Heights[X + (Y * GridCountX)] = NewHeight;
+}
+
 float FSideScrollGraph::LeastCostEstimate(void* StartState, void* EndState)
 {
 	FIntPoint StartPosition = StateToVec2(StartState);
@@ -69,7 +88,7 @@ void* FSideScrollGraph::Vec2ToState(const FIntPoint& Position) const
 	return (void*)Index;
 }
 
-int FSideScrollGraph::GetHeight(int32 X, int32 Y) const
+int32 FSideScrollGraph::GetHeight(int32 X, int32 Y) const
 {
 	if (X < 0 || X >= GridCountX)
 	{

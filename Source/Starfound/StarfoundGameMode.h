@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "BlockActor.h"
+#include "Nav/Navigation.h"
 #include "StarfoundGameMode.generated.h"
 
 UCLASS(minimalapi)
@@ -28,4 +29,7 @@ private:
 
 	UPROPERTY(Transient)
 	UBlockActorScene* BlockActorScene;
+
+	UPROPERTY(Transient)
+	ANavigation* Navigation;
 };
