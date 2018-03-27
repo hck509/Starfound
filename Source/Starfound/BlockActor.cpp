@@ -80,7 +80,7 @@ void UBlockGenerator::GenerateRandomBlockWorld(UWorld* World, const TArray<TSubc
 	const int32 SizeZ = 20;
 
 	// Hole
-	const FBox2D StartingArea(FVector2D(-5, 0), FVector2D(5, 4));
+	const FBox2D StartingArea(FVector2D(-5, -2), FVector2D(5, 4));
 	const int32 HolePercentage = 30;
 
 	FActorSpawnParameters ActorSpawnParam;

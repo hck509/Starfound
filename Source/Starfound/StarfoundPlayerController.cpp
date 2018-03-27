@@ -70,8 +70,7 @@ void AStarfoundPlayerController::DestructBlock()
 
 void AStarfoundPlayerController::MoveToCursorLocation()
 {
-	APawn* Pawn = GetPawn();
-	if (!Pawn)
+	if (!SelectedPawn)
 	{
 		return;
 	}
@@ -82,20 +81,20 @@ void AStarfoundPlayerController::MoveToCursorLocation()
 		return;
 	}
 
-	const FVector PawnLocation = Pawn->GetActorLocation();
+	const FVector PawnLocation = SelectedPawn->GetActorLocation();
 	const FVector CursorLocation = GetCursorLocation();
 
 	TArray<FVector2D> PathPoints;
 	const bool bPathFound = GameMode->GetNavigation()->FindPath(PawnLocation, CursorLocation, PathPoints);
 
-	DrawDebugPoint(GetWorld(), PawnLocation + FVector(150, 0, 0), 40.0f, FColor::Blue, false, 5.0f);
-	DrawDebugPoint(GetWorld(), CursorLocation + FVector(150, 0, 0), 40.0f, FColor::Blue, false, 5.0f);
+	DrawDebugPoint(GetWorld(), PawnLocation + FVector(100, 0, 0), 40.0f, FColor::Blue, false, 5.0f);
+	DrawDebugPoint(GetWorld(), CursorLocation + FVector(100, 0, 0), 40.0f, FColor::Blue, false, 5.0f);
 
 	if (bPathFound)
 	{
 		for (const FVector2D& Point : PathPoints)
 		{
-			DrawDebugPoint(GetWorld(), FVector(150, Point.X, Point.Y), 30.0f, FColor::Red, false, 5.0f);
+			DrawDebugPoint(GetWorld(), FVector(90, Point.X, Point.Y), 30.0f, FColor::Red, false, 5.0f);
 		}
 	}
 }
@@ -126,6 +125,20 @@ FVector AStarfoundPlayerController::GetCursorLocation()
 	return FVector::ZeroVector;
 }
 
+bool AStarfoundPlayerController::TrySelectPawnOnCursorLocation()
+{
+	FHitResult HitResult;
+	bool bHitFound = GetHitResultUnderCursor(ECC_Pawn, true, HitResult);
+
+	if (bHitFound && HitResult.Actor.IsValid() && HitResult.Actor->IsA(AStarfoundPawn::StaticClass()))
+	{
+		SelectedPawn = Cast<AStarfoundPawn>(HitResult.Actor.Get());
+		return true;
+	}
+
+	return false;
+}
+
 void AStarfoundPlayerController::BeginPlay()
 {
 	ActiveToolType = EToolType::None;
@@ -153,7 +166,14 @@ void AStarfoundPlayerController::Tick(float DeltaSeconds)
 
 		if (bHitFound && HitResult.Actor.IsValid() && HitResult.Actor->IsA(ABlockActor::StaticClass()))
 		{
-			DrawDebugBox(GetWorld(), HitResult.Actor->GetActorLocation(), FVector(50, 50, 50), FColor::White);
+			DrawDebugBox(GetWorld(), HitResult.Actor->GetActorLocation(), FVector(50, 50, 50), FColor::Green);
+		}
+	}
+	else
+	{
+		if (SelectedPawn)
+		{
+			DrawDebugBox(GetWorld(), SelectedPawn->GetActorLocation(), FVector(50, 50, 50), FColor::Green);
 		}
 	}
 }
@@ -194,10 +214,21 @@ bool AStarfoundPlayerController::InputKey(FKey Key, EInputEvent EventType, float
 			DestructBlock();
 			return true;
 		}
-		else
+		else 
 		{
-			MoveToCursorLocation();
-			return true;
+			if (SelectedPawn)
+			{
+				MoveToCursorLocation();
+				return true;
+			}
+			else
+			{
+				const bool bPicked = TrySelectPawnOnCursorLocation();
+				if (bPicked)
+				{
+					return true;
+				}
+			}
 		}
 	}
 

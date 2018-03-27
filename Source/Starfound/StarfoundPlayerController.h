@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "BlockActor.h"
+#include "StarfoundPawn.h"
 #include "StarfoundPlayerController.generated.h"
 
 UENUM()
@@ -46,6 +47,8 @@ private:
 
 	void MoveToCursorLocation();
 	FVector GetCursorLocation();
+
+	bool TrySelectPawnOnCursorLocation();
 	
 	UPROPERTY()
 	EToolType ActiveToolType;
@@ -55,4 +58,7 @@ private:
 
 	UPROPERTY()
 	ABlockActor* CreatingBlockActor;
+
+	UPROPERTY()
+	AStarfoundPawn* SelectedPawn;
 };
