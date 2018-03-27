@@ -3,6 +3,7 @@
 #include "StarfoundPlayerController.h"
 #include "DrawDebugHelpers.h"
 #include "StarfoundGameMode.h"
+#include "StarfoundAIController.h"
 
 void AStarfoundPlayerController::StartConstruct(TSubclassOf<ABlockActor> BlockClass)
 {
@@ -60,7 +61,7 @@ void AStarfoundPlayerController::DestructBlock()
 	}
 
 	FHitResult HitResult;
-	bool bHitFound = GetHitResultUnderCursor(ECC_WorldStatic, true, HitResult);
+	bool bHitFound = GetHitResultUnderCursorByChannel(UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_WorldStatic), true, HitResult);
 
 	if (bHitFound && HitResult.Actor.IsValid() && HitResult.Actor->IsA(ABlockActor::StaticClass()))
 	{
@@ -75,28 +76,7 @@ void AStarfoundPlayerController::MoveToCursorLocation()
 		return;
 	}
 
-	AStarfoundGameMode* GameMode = Cast<AStarfoundGameMode>(GetWorld()->GetAuthGameMode());
-	if (!GameMode)
-	{
-		return;
-	}
-
-	const FVector PawnLocation = SelectedPawn->GetActorLocation();
-	const FVector CursorLocation = GetCursorLocation();
-
-	TArray<FVector2D> PathPoints;
-	const bool bPathFound = GameMode->GetNavigation()->FindPath(PawnLocation, CursorLocation, PathPoints);
-
-	DrawDebugPoint(GetWorld(), PawnLocation + FVector(100, 0, 0), 40.0f, FColor::Blue, false, 5.0f);
-	DrawDebugPoint(GetWorld(), CursorLocation + FVector(100, 0, 0), 40.0f, FColor::Blue, false, 5.0f);
-
-	if (bPathFound)
-	{
-		for (const FVector2D& Point : PathPoints)
-		{
-			DrawDebugPoint(GetWorld(), FVector(90, Point.X, Point.Y), 30.0f, FColor::Red, false, 5.0f);
-		}
-	}
+	SelectedPawn->GetAIController()->MoveToLocation(GetCursorLocation());
 }
 
 FVector AStarfoundPlayerController::GetCursorLocation()

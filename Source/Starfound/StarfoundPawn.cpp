@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "StarfoundPawn.h"
-
+#include "StarfoundAIController.h"
 
 // Sets default values
 AStarfoundPawn::AStarfoundPawn()
@@ -9,6 +9,7 @@ AStarfoundPawn::AStarfoundPawn()
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	AIControllerClass = AStarfoundAIController::StaticClass();
 }
 
 // Called when the game starts or when spawned
@@ -30,5 +31,10 @@ void AStarfoundPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+}
+
+class AStarfoundAIController* AStarfoundPawn::GetAIController() const
+{
+	return Cast<AStarfoundAIController>(GetController());
 }
 

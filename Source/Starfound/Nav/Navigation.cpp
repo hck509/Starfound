@@ -105,7 +105,7 @@ void ANavigation::DebugDraw() const
 			const int32 WorldGridX = BlockScene->OriginSpaceGridToWorldSpaceGridX(X);
 			const int32 WorldGridY = BlockScene->OriginSpaceGridToWorldSpaceGridX(Y);
 
-			const FVector WorldPosition(60, WorldGridX * BlockScene->GetGridCellSize(), WorldGridY * BlockScene->GetGridCellSize());
+			const FVector WorldPosition(55, WorldGridX * BlockScene->GetGridCellSize(), WorldGridY * BlockScene->GetGridCellSize());
 
 			if (Height == -1)
 			{
