@@ -21,6 +21,8 @@ public:
 	void DebugDraw() const;
 
 private:
+	void UpdateGraph();
+
 	TUniquePtr<FSideScrollGraph> Graph;
 	TUniquePtr<MicroPanther::MicroPather> MicroPather;
 };

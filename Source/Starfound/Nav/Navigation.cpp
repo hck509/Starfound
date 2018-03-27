@@ -14,6 +14,12 @@ void ANavigation::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
+	UpdateGraph();
+
+}
+
+void ANavigation::UpdateGraph()
+{
 	UBlockActorScene* BlockScene = GetWorld() ? Cast<UBlockActorScene>(GetWorld()->GetWorldSettings()->GetAssetUserDataOfClass(UBlockActorScene::StaticClass())) : nullptr;
 	if (BlockScene)
 	{
@@ -34,7 +40,13 @@ void ANavigation::Tick(float DeltaSeconds)
 				const int32 WorldGridY = BlockScene->OriginSpaceGridToWorldSpaceGridX(Y);
 				ABlockActor* BlockActor = BlockScene->GetBlock(WorldGridX, WorldGridY);
 
-				if (BlockActor)
+				// Have to have floor to move
+				ABlockActor* FloorBlockActor = BlockScene->GetBlock(WorldGridX, WorldGridY - 1);
+
+				// A pawn is 2 block tall
+				ABlockActor* UpperBlockActor = BlockScene->GetBlock(WorldGridX, WorldGridY + 1);
+
+				if (BlockActor || !FloorBlockActor || UpperBlockActor)
 				{
 					Graph->SetHeight(X, Y, -1);
 				}

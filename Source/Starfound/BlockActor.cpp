@@ -170,13 +170,11 @@ ABlockActor* UBlockActorScene::GetBlock(int32 X, int32 Y) const
 {
 	if (X < -GridX || X > GridX)
 	{
-		ensure(0);
 		return nullptr;
 	}
 
 	if (Y < -GridY || Y > GridY)
 	{
-		ensure(0);
 		return nullptr;
 	}
 
