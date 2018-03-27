@@ -3,7 +3,7 @@
 #include "Micropather.h"
 
 // void* state is defined as x + (y * Column Count)
-class FSideScrollGraph : public MicroPanther::Graph
+class FSideScrollGraph : public MicroPanther::FGraph
 {
 public:
 	FSideScrollGraph();
@@ -17,7 +17,7 @@ public:
 	int32 GetHeight(int32 X, int32 Y) const;
 
 	virtual float LeastCostEstimate(void* StartState, void* EndState) override;
-	virtual void AdjacentCost(void* State, MP_VECTOR<MicroPanther::StateCost>* AdjacentCosts) override;
+	virtual void AdjacentCost(void* State, TArray<MicroPanther::FStateCost>* AdjacentCosts) override;
 	virtual void PrintStateInfo(void* State) override;
 
 	FIntPoint StateToVec2(void* State) const;

@@ -24,5 +24,5 @@ private:
 	void UpdateGraph();
 
 	TUniquePtr<FSideScrollGraph> Graph;
-	TUniquePtr<MicroPanther::MicroPather> MicroPather;
+	TUniquePtr<MicroPanther::FMicroPather> MicroPather;
 };

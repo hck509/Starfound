@@ -37,7 +37,7 @@ float FSideScrollGraph::LeastCostEstimate(void* StartState, void* EndState)
 	return Cost;
 }
 
-void FSideScrollGraph::AdjacentCost(void* State, MP_VECTOR<MicroPanther::StateCost>* AdjacentCosts)
+void FSideScrollGraph::AdjacentCost(void* State, TArray<MicroPanther::FStateCost>* AdjacentCosts)
 {
 	const int32 AdjacentX[8] = { 1, 1, 0, -1, -1, -1, 0, 1 };
 	const int32 AdjacentY[8] = { 0, 1, 1, 1, 0, -1, -1, -1 };
@@ -56,7 +56,7 @@ void FSideScrollGraph::AdjacentCost(void* State, MP_VECTOR<MicroPanther::StateCo
 			// Not Blocked
 			void* AdjacentState = Vec2ToState(AdjacentPosition);
 
-			MicroPanther::StateCost Cost = { AdjacentState, Costs[i] };
+			MicroPanther::FStateCost Cost = { AdjacentState, Costs[i] };
 
 			AdjacentCosts->Add(Cost);
 		}

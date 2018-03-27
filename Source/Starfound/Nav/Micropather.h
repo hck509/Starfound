@@ -40,15 +40,6 @@ Modified to fit in Unreal Engine4 by hck509@gmail.com
 	a license suitable for open source or commercial use.
 */
 
-// This probably works to remove, but isn't currently tested in STL mode.
-#define GRINLIZ_NO_STL
-
-#ifdef GRINLIZ_NO_STL
-#	define MP_VECTOR TArray
-#else
-#	include <vector>
-#	define MP_VECTOR std::vector
-#endif
 #include <float.h>
 
 #ifdef _DEBUG
@@ -57,22 +48,7 @@ Modified to fit in Unreal Engine4 by hck509@gmail.com
 	#endif
 #endif
 
-
-#if defined(DEBUG)
-#   if defined(_MSC_VER)
-#       // "(void)0," is for suppressing C4127 warning in "assert(false)", "assert(true)" and the like
-#       define MPASSERT( x )           if ( !((void)0,(x))) { __debugbreak(); } //if ( !(x)) WinDebugBreak()
-#   elif defined (ANDROID_NDK)
-#       include <android/log.h>
-#       define MPASSERT( x )           if ( !(x)) { __android_log_assert( "assert", "grinliz", "ASSERT in '%s' at %d.", __FILE__, __LINE__ ); }
-#   else
-#       include <assert.h>
-#       define MPASSERT                assert
-#   endif
-#   else
-#       define MPASSERT( x )           {}
-#endif
-
+#define MPASSERT ensure
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1400 )
 	#include <stdlib.h>
@@ -88,62 +64,16 @@ Modified to fit in Unreal Engine4 by hck509@gmail.com
 
 namespace MicroPanther
 {
-#ifdef GRINLIZ_NO_STL
-
-	/* WARNING: vector partial replacement. Does everything needed to replace std::vector
-	   for micropather, but only works on Plain Old Data types. Doesn't call copy/construct/destruct
-	   correctly for general use.
-	 */
-	template <typename T>
-	class MPVector {
-	public:
-		MPVector() : m_allocated( 0 ), m_size( 0 ), m_buf ( 0 ) {}
-		~MPVector()	{ delete [] m_buf; }
-
-		void clear()						{ m_size = 0; }	// see warning above
-		void resize( unsigned s )			{ capacity( s );
-											  m_size = s;
-											}	
-		T& operator[](unsigned i)			{ MPASSERT( i>=0 && i<m_size );
-											  return m_buf[i];
-											}
-		const T& operator[](unsigned i) const	{ MPASSERT( i>=0 && i<m_size );
-												  return m_buf[i];
-												}
-		void push_back( const T& t )		{ capacity( m_size+1 );
-											  m_buf[m_size++] = t;
-											}
-		unsigned size()	const				{ return m_size; }
-
-	private:
-		void capacity( unsigned cap ) {
-			if ( m_allocated < cap ) { 
-				unsigned newAllocated = cap * 3/2 + 16;
-				T* newBuf = new T[newAllocated];
-				MPASSERT( m_size <= m_allocated );
-				MPASSERT( m_size < newAllocated );
-				memcpy( newBuf, m_buf, sizeof(T)*m_size );
-				delete [] m_buf;
-				m_buf = newBuf;
-				m_allocated = newAllocated;
-			}
-		}
-		unsigned m_allocated;
-		unsigned m_size;
-		T* m_buf;
-	};
-#endif
-
 	/**
-		Used to pass the cost of states from the cliet application to MicroPather. This
+		Used to pass the cost of states from the client application to MicroPather. This
 		structure is copied in a vector.
 
 		@sa AdjacentCost
 	*/
-	struct StateCost
+	struct FStateCost
 	{
-		void* state;			///< The state as a void*
-		float cost;				///< The cost to the state. Use FLT_MAX for infinite cost.
+		void* State;			///< The state as a void*
+		float Cost;				///< The cost to the state. Use FLT_MAX for infinite cost.
 	};
 
 
@@ -161,10 +91,10 @@ namespace MicroPanther
 		values, (x,y) for example, then state is an encoding of these values. MicroPather
 		never interprets or modifies the value of state.
 	*/
-	class Graph
+	class FGraph
 	{
 	  public:
-		virtual ~Graph() {}
+		virtual ~FGraph() {}
 	  
 		/**
 			Return the least possible cost between 2 states. For example, if your pathfinding 
@@ -172,7 +102,7 @@ namespace MicroPanther
 			map. If you pathfinding is based on minimum time, it is the minimal travel time 
 			between 2 points given the best possible terrain.
 		*/
-		virtual float LeastCostEstimate( void* stateStart, void* stateEnd ) = 0;
+		virtual float LeastCostEstimate(void* StartState, void* EndState) = 0;
 
 		/** 
 			Return the exact cost from the given state to all its neighboring states. This
@@ -180,23 +110,23 @@ namespace MicroPanther
 			exact values for every call to MicroPather::Solve(). It should generally be a simple,
 			fast function with no callbacks into the pather.
 		*/	
-		virtual void AdjacentCost( void* state, MP_VECTOR< MicroPanther::StateCost > *adjacent ) = 0;
+		virtual void AdjacentCost(void* State, TArray< MicroPanther::FStateCost >* Adjacent) = 0;
 
 		/**
 			This function is only used in DEBUG mode - it dumps output to stdout. Since void* 
 			aren't really human readable, normally you print out some concise info (like "(1,2)") 
 			without an ending newline.
 		*/
-		virtual void  PrintStateInfo( void* state ) = 0;
+		virtual void  PrintStateInfo(void* State) = 0;
 	};
 
 
-	class PathNode;
+	class FPathNode;
 
-	struct NodeCost
+	struct FNodeCost
 	{
-		PathNode* node;
-		float cost;
+		FPathNode* Node;
+		float Cost;
 	};
 
 
@@ -204,80 +134,63 @@ namespace MicroPanther
 		Every state (void*) is represented by a PathNode in MicroPather. There
 		can only be one PathNode for a given state.
 	*/
-	class PathNode
+	class FPathNode
 	{
 	  public:
-		void Init(	unsigned _frame,
-					void* _state,
-					float _costFromStart, 
-					float _estToGoal, 
-					PathNode* _parent );
+		  void Init(
+			  unsigned _frame,
+			  void* _state,
+			  float _costFromStart,
+			  float _estToGoal,
+			  FPathNode* _parent);
 
 		void Clear();
-		void InitSentinel() {
-			Clear();
-			Init( 0, 0, FLT_MAX, FLT_MAX, 0 );
-			prev = next = this;
-		}	
+		void InitSentinel();	
 
-		void *state;			// the client state
-		float costFromStart;	// exact
-		float estToGoal;		// estimated
-		float totalCost;		// could be a function, but save some math.
-		PathNode* parent;		// the parent is used to reconstruct the path
-		unsigned frame;			// unique id for this path, so the solver can distinguish
+		void* State;			// the client state
+		float CostFromStart;	// exact
+		float EstToGoal;		// estimated
+		float TotalCost;		// could be a function, but save some math.
+		FPathNode* Parent;		// the parent is used to reconstruct the path
+		unsigned Frame;			// unique id for this path, so the solver can distinguish
 								// correct from stale values
 
-		int numAdjacent;		// -1  is unknown & needs to be queried
-		int cacheIndex;			// position in cache
+		int NumAdjacent;		// -1  is unknown & needs to be queried
+		int CacheIndex;			// position in cache
 
-		PathNode *child[2];		// Binary search in the hash table. [left, right]
-		PathNode *next, *prev;	// used by open queue
+		FPathNode* Child[2];		// Binary search in the hash table. [left, right]
+		FPathNode* Next, *Prev;	// used by open queue
 
-		bool inOpen;
-		bool inClosed;
+		bool bInOpen;
+		bool bInClosed;
 
-		void Unlink() {
-			next->prev = prev;
-			prev->next = next;
-			next = prev = 0;
-		}
-		void AddBefore( PathNode* addThis ) {
-			addThis->next = this;
-			addThis->prev = prev;
-			prev->next = addThis;
-			prev = addThis;
-		}
-		#ifdef DEBUG
+		void Unlink();
+		void AddBefore(FPathNode* addThis);
+
+#ifdef DEBUG
 		void CheckList()
 		{
-			MPASSERT( totalCost == FLT_MAX );
-			for( PathNode* it = next; it != this; it=it->next ) {
-				MPASSERT( it->prev == this || it->totalCost >= it->prev->totalCost );
-				MPASSERT( it->totalCost <= it->next->totalCost );
+			MPASSERT( TotalCost == FLT_MAX );
+			for( FPathNode* it = Next; it != this; it=it->Next ) {
+				MPASSERT( it->Prev == this || it->TotalCost >= it->Prev->TotalCost );
+				MPASSERT( it->TotalCost <= it->Next->TotalCost );
 			}
 		}
-		#endif
+#endif
 
-		void CalcTotalCost() {
-			if ( costFromStart < FLT_MAX && estToGoal < FLT_MAX )
-				totalCost = costFromStart + estToGoal;
-			else
-				totalCost = FLT_MAX;
-		}
+		void CalcTotalCost();
 
-	  private:
-
-		void operator=( const PathNode& );
+	private:
+		void operator=(const FPathNode&);
 	};
 
 
 	/* Memory manager for the PathNodes. */
-	class PathNodePool
+	class FPathNodePool
 	{
 	public:
-		PathNodePool( unsigned allocate, unsigned typicalAdjacent );
-		~PathNodePool();
+		FPathNodePool(unsigned InNumNodesPerBlock, unsigned _typicalAdjacent);
+		~FPathNodePool();
 
 		// Free all the memory except the first block. Resets all memory.
 		void Clear();
@@ -294,55 +207,64 @@ namespace MicroPanther
 		//
 		// NOTE: if the pathNode exists (and is current) all the initialization
 		//       parameters are ignored.
-		PathNode* GetPathNode(		unsigned frame,
-									void* _state,
-									float _costFromStart, 
-									float _estToGoal, 
-									PathNode* _parent );
+		FPathNode* GetPathNode(
+			unsigned frame,
+			void* _state,
+			float _costFromStart,
+			float _estToGoal,
+			FPathNode* _parent);
 
 		// Get a pathnode that is already in the pool.
-		PathNode* FetchPathNode( void* state );
+		FPathNode* FetchPathNode(void* state);
 
 		// Store stuff in cache
-		bool PushCache(const MP_VECTOR<NodeCost>& Nodes, int* OutStartIndex);
+		bool PushCache(const TArray<FNodeCost>& Nodes, int* OutStartIndex);
 
 		// Get neighbors from the cache
 		// Note - always access this with an offset. Can get re-allocated.
-		void GetCache( int start, int nNodes, NodeCost* nodes );
+		void GetCache(int start, int nNodes, FNodeCost* nodes);
 
 		// Return all the allocated states. Useful for visuallizing what
 		// the pather is doing.
-		void AllStates( unsigned frame, MP_VECTOR< void* >* stateVec );
+		void AllStates(unsigned frame, TArray< void* >* stateVec);
 
 	private:
-		struct Block
+		struct FBlock
 		{
-			Block* nextBlock;
-			PathNode pathNode[1];
+			FBlock* NextBlock;
+			FPathNode PathNode[1];
 		};
 
-		unsigned Hash( void* voidval );
-		unsigned HashSize() const	{ return 1<<hashShift; }
-		unsigned HashMask()	const	{ return ((1<<hashShift)-1); }
-		void AddPathNode( unsigned key, PathNode* p );
-		Block* NewBlock();
-		PathNode* Alloc();
+		unsigned Hash(void* voidval);
+		unsigned HashSize() const { return 1 << HashShift; }
+		unsigned HashMask()	const { return ((1 << HashShift) - 1); }
+		void AddPathNode(uint32 key, FPathNode* p);
+		FBlock* NewBlock();
+		FPathNode* Alloc();
 
-		PathNode**	hashTable;
-		Block*		firstBlock;
-		Block*		blocks;
+		FPathNode** HashTable;
+		FBlock* FirstBlock;
+		FBlock* Blocks;
 
-		NodeCost*	cache;
-		int			cacheCap;
-		int			cacheSize;
+		FNodeCost* Cache;
+		int32 CacheCap;
+		int32 CacheSize;
 
-		PathNode	freeMemSentinel;
-		unsigned	allocate;				// how big a block of pathnodes to allocate at once
-		unsigned	nAllocated;				// number of pathnodes allocated (from Alloc())
-		unsigned	nAvailable;				// number available for allocation
+		FPathNode FreeMemSentinel;
 
-		unsigned	hashShift;	
-		unsigned	totalCollide;
+		// how big a block of path nodes to allocate at once
+		uint32 NumNodesPerBlock;
+
+		// number of pathnodes allocated (from Alloc())
+		uint32 NumTotalAllocatedNodes;
+
+		// number available for allocation
+		uint32 NumAvailableNodesOnLastBlock;
+				 
+		uint32 HashShift;
+
+		// Debug purpose
+		int32 NumHashCollision;
 	};
 
 
@@ -350,26 +272,29 @@ namespace MicroPanther
 	   to return an existing solution than to calculate
 	   a new one. A post on this is here: http://grinninglizard.com/altera/programming/a-path-caching-2/
 	*/
-	class PathCache
+	class FPathCache
 	{
 	public:
-		struct Item {
+		struct Item
+		{
 			// The key:
-			void* start;
-			void* end;
+			void* Start;
+			void* End;
 
-			bool KeyEqual( const Item& item ) const	{ return start == item.start && end == item.end; }
-			bool Empty() const						{ return start == 0 && end == 0; }
+			bool KeyEqual(const Item& item) const { return Start == item.Start && End == item.End; }
+			bool Empty() const { return Start == 0 && End == 0; }
 
 			// Data:
-			void*	next;
-			float	cost;	// from 'start' to 'next'. FLT_MAX if unsolveable.
+			void* Next;
+			float Cost;	// from 'start' to 'next'. FLT_MAX if unsolveable.
 
-			unsigned Hash() const {
-				const unsigned char *p = (const unsigned char *)(&start);
+			unsigned Hash() const
+			{
+				const unsigned char *p = (const unsigned char *)(&Start);
 				unsigned int h = 2166136261U;
 
-				for( unsigned i=0; i<sizeof(void*)*2; ++i, ++p ) {
+				for (unsigned i = 0; i < sizeof(void*) * 2; ++i, ++p)
+				{
 					h ^= *p;
 					h *= 16777619;
 				}
@@ -377,47 +302,49 @@ namespace MicroPanther
 			}
 		};
 
-		PathCache( int itemsToAllocate );
-		~PathCache();
+		FPathCache(int itemsToAllocate);
+		~FPathCache();
 		
 		void Reset();
-		void Add( const MP_VECTOR< void* >& path, const MP_VECTOR< float >& cost );
-		void AddNoSolution( void* end, void* states[], int count );
-		int Solve( void* startState, void* endState, MP_VECTOR< void* >* path, float* totalCost );
+		void Add(const TArray<void*>& path, const TArray<float>& cost);
+		void AddNoSolution(void* end, void* states[], int count);
+		int Solve(void* startState, void* endState, TArray<void*>* path, float* totalCost);
 
-		int AllocatedBytes() const { return allocated * sizeof(Item); }
-		int UsedBytes() const { return nItems * sizeof(Item); }
+		int AllocatedBytes() const { return NumItemsAllocated * sizeof(Item); }
+		int UsedBytes() const { return NumItems * sizeof(Item); }
 
-		int hit;
-		int miss;
+		int NumHit;
+		int NumMiss;
 
 	private:
-		void AddItem( const Item& item );
-		const Item* Find( void* start, void* end );
-		
-		Item*	mem;
-		int		allocated;
-		int		nItems;
+		void AddItem(const Item& item);
+		const Item* Find(void* start, void* end);
+
+		Item* Items;
+		int32 NumItemsAllocated;
+		int32 NumItems;
 	};
 
-	struct CacheData {
-		CacheData() : nBytesAllocated(0), nBytesUsed(0), memoryFraction(0), hit(0), miss(0), hitFraction(0) {}
-		int nBytesAllocated;
-		int nBytesUsed;
-		float memoryFraction;
+	struct FCacheData
+	{
+		FCacheData() : BytesAllocated(0), BytesUsed(0), MemoryFraction(0), NumHit(0), NumMiss(0), HitFraction(0) {}
 
-		int hit;
-		int miss;
-		float hitFraction;
+		int32 BytesAllocated;
+		int32 BytesUsed;
+		float MemoryFraction;
+
+		int32 NumHit;
+		int32 NumMiss;
+		float HitFraction;
 	};
 
 	/**
 		Create a MicroPather object to solve for a best path. Detailed usage notes are
 		on the main page.
 	*/
-	class MicroPather
+	class FMicroPather
 	{
-		friend class MicroPanther::PathNode;
+		friend class MicroPanther::FPathNode;
 
 	  public:
 		enum
@@ -453,8 +380,8 @@ namespace MicroPanther
 								advantage if you may call the pather with the same path or sub-path, which
 								is common for pathing over maps in games.
 		*/
-		MicroPather( Graph* graph, unsigned allocate = 250, unsigned typicalAdjacent=6, bool cache=true );
-		~MicroPather();
+		FMicroPather(FGraph* graph, unsigned allocate = 250, unsigned typicalAdjacent = 6, bool cache = true);
+		~FMicroPather();
 
 		/**
 			Solve for the path from start to end.
@@ -465,7 +392,7 @@ namespace MicroPanther
 			@param totalCost	Output, the cost of the path, if found.
 			@return				Success or failure, expressed as SOLVED, NO_SOLUTION, or START_END_SAME.
 		*/
-		int Solve( void* startState, void* endState, MP_VECTOR< void* >* path, float* totalCost );
+		int Solve(void* startState, void* endState, TArray<void*>* path, float* totalCost);
 
 		/**
 			Find all the states within a given cost from startState.
@@ -476,7 +403,7 @@ namespace MicroPanther
 								larger 'near' sets and take more time to compute.)
 			@return				Success or failure, expressed as SOLVED or NO_SOLUTION.
 		*/
-		int SolveForNearStates( void* startState, MP_VECTOR< StateCost >* near, float maxCost );
+		int SolveForNearStates(void* startState, TArray<FStateCost>* near, float maxCost);
 
 		/** Should be called whenever the cost between states or the connection between states changes.
 			Also frees overhead memory used by MicroPather, and calling will free excess memory.
@@ -484,31 +411,37 @@ namespace MicroPanther
 		void Reset();
 
 		// Debugging function to return all states that were used by the last "solve" 
-		void StatesInPool( MP_VECTOR< void* >* stateVec );
-		void GetCacheData( CacheData* data );
+		void StatesInPool(TArray<void*>* stateVec);
+		void GetCacheData(FCacheData* data);
 
 	  private:
-		MicroPather( const MicroPather& );	// undefined and unsupported
-		void operator=( const MicroPather ); // undefined and unsupported
-		
-		void GoalReached( PathNode* node, void* start, void* end, MP_VECTOR< void* > *path );
+		  FMicroPather(const FMicroPather&);	// undefined and unsupported
+		  void operator=(const FMicroPather); // undefined and unsupported
 
-		void GetNodeNeighbors(	PathNode* node, MP_VECTOR< NodeCost >* neighborNode );
+		  void GoalReached(FPathNode* node, void* start, void* end, TArray<void*> *path);
 
-		#ifdef DEBUG
-		//void DumpStats();
-		#endif
+		  void GetNodeNeighbors(FPathNode* node, TArray<FNodeCost>* neighborNode);
 
-		PathNodePool			pathNodePool;
-		MP_VECTOR< StateCost >	stateCostVec;	// local to Solve, but put here to reduce memory allocation
-		MP_VECTOR< NodeCost >	nodeCostVec;	// local to Solve, but put here to reduce memory allocation
-		MP_VECTOR< float >		costVec;
-
-		Graph* graph;
-		unsigned frame;						// incremented with every solve, used to determine if cached data needs to be refreshed
-		PathCache* pathCache;
-	};
-};	// namespace grinliz
-
+#ifdef DEBUG
+		  //void DumpStats();
 #endif
 
+		  FPathNodePool PathNodePool;
+
+		  // local to Solve, but put here to reduce memory allocation
+		  TArray<FStateCost> StateCosts;
+
+		  // local to Solve, but put here to reduce memory allocation
+		  TArray<FNodeCost> NodeCosts;	
+		  TArray<float>	Costs;
+
+		  FGraph* Graph;
+
+		  // incremented with every solve, used to determine if cached data needs to be refreshed
+		  unsigned Frame;
+		  FPathCache* PathCache;
+	};
+
+};	// MicroPanther
+
+#endif

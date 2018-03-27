@@ -7,7 +7,7 @@ ANavigation::ANavigation()
 	PrimaryActorTick.bCanEverTick = true;
 
 	Graph.Reset(new FSideScrollGraph);
-	MicroPather.Reset(new MicroPanther::MicroPather(Graph.Get(), 250, 6, false));
+	MicroPather.Reset(new MicroPanther::FMicroPather(Graph.Get(), 250, 6, false));
 }
 
 void ANavigation::Tick(float DeltaSeconds)
@@ -76,12 +76,12 @@ bool ANavigation::FindPath(const FVector& StartLocation, const FVector& TargetLo
 	void* StartState = Graph->Vec2ToState(FIntPoint(StartX, StartY));
 	void* EndState = Graph->Vec2ToState(FIntPoint(TargetX, TargetY));
 
-	MP_VECTOR<void*> Path;
+	TArray<void*> Path;
 	float TotalCost;
 
 	const int32 Result = MicroPather->Solve(StartState, EndState, &Path, &TotalCost);
 
-	if (Result == MicroPanther::MicroPather::SOLVED)
+	if (Result == MicroPanther::FMicroPather::SOLVED)
 	{
 		for (int32 i = 0; i < Path.Num(); ++i)
 		{
