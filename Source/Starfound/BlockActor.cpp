@@ -126,6 +126,12 @@ void UBlockActorScene::RegisterBlockActor(ABlockActor* BlockActor)
 {
 	BlockActors.Remove(BlockActor);
 
+	int32 OldIndex = BlockActors.Find(BlockActor);
+	if (OldIndex != INDEX_NONE)
+	{
+		BlockActors[OldIndex] = nullptr;
+	}
+
 	const int32 X = FMath::RoundToInt(BlockActor->GetActorLocation().Y / GridCellSize);
 	const int32 Y = FMath::RoundToInt(BlockActor->GetActorLocation().Z / GridCellSize);
 
@@ -153,7 +159,11 @@ void UBlockActorScene::RegisterBlockActor(ABlockActor* BlockActor)
 
 void UBlockActorScene::UnRegisterBlockActor(ABlockActor* BlockActor)
 {
-	BlockActors.Remove(BlockActor);
+	int32 OldIndex = BlockActors.Find(BlockActor);
+	if (OldIndex != INDEX_NONE)
+	{
+		BlockActors[OldIndex] = nullptr;
+	}
 }
 
 ABlockActor* UBlockActorScene::GetBlock(int32 X, int32 Y) const

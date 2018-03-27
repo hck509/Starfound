@@ -16,6 +16,8 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 
+	bool FindPath(const FVector& StartLocation, const FVector& TargetLocation, TArray<FVector2D>& OutPath);
+
 	void DebugDraw() const;
 
 private:

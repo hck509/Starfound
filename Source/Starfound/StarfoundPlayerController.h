@@ -43,6 +43,9 @@ public:
 	void DestructBlock();
 
 private:
+
+	void MoveToCursorLocation();
+	FVector GetCursorLocation();
 	
 	UPROPERTY()
 	EToolType ActiveToolType;

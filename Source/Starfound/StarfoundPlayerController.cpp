@@ -2,6 +2,7 @@
 
 #include "StarfoundPlayerController.h"
 #include "DrawDebugHelpers.h"
+#include "StarfoundGameMode.h"
 
 void AStarfoundPlayerController::StartConstruct(TSubclassOf<ABlockActor> BlockClass)
 {
@@ -67,6 +68,64 @@ void AStarfoundPlayerController::DestructBlock()
 	}
 }
 
+void AStarfoundPlayerController::MoveToCursorLocation()
+{
+	APawn* Pawn = GetPawn();
+	if (!Pawn)
+	{
+		return;
+	}
+
+	AStarfoundGameMode* GameMode = Cast<AStarfoundGameMode>(GetWorld()->GetAuthGameMode());
+	if (!GameMode)
+	{
+		return;
+	}
+
+	const FVector PawnLocation = Pawn->GetActorLocation();
+	const FVector CursorLocation = GetCursorLocation();
+
+	TArray<FVector2D> PathPoints;
+	const bool bPathFound = GameMode->GetNavigation()->FindPath(PawnLocation, CursorLocation, PathPoints);
+
+	DrawDebugPoint(GetWorld(), PawnLocation + FVector(150, 0, 0), 40.0f, FColor::Blue, false, 5.0f);
+	DrawDebugPoint(GetWorld(), CursorLocation + FVector(150, 0, 0), 40.0f, FColor::Blue, false, 5.0f);
+
+	if (bPathFound)
+	{
+		for (const FVector2D& Point : PathPoints)
+		{
+			DrawDebugPoint(GetWorld(), FVector(150, Point.X, Point.Y), 30.0f, FColor::Red, false, 5.0f);
+		}
+	}
+}
+
+FVector AStarfoundPlayerController::GetCursorLocation()
+{
+	float MousePositionX, MousePositionY;
+	const bool bValidMousePosition = GetMousePosition(MousePositionX, MousePositionY);
+
+	if (bValidMousePosition)
+	{
+		FVector MouseWorldPosition, MouseWorldDirection;
+		const bool bValidProjection = DeprojectScreenPositionToWorld(MousePositionX, MousePositionY, MouseWorldPosition, MouseWorldDirection);
+
+		if (bValidProjection)
+		{
+			const float DistanceToPlane = MouseWorldPosition.X / (MouseWorldDirection | FVector(-1, 0, 0));
+			FVector MouseWorldPositionAtPlane = MouseWorldPosition + (MouseWorldDirection * DistanceToPlane);
+
+			// Snap to grid
+			MouseWorldPositionAtPlane.Y = FMath::GridSnap(MouseWorldPositionAtPlane.Y, 100);
+			MouseWorldPositionAtPlane.Z = FMath::GridSnap(MouseWorldPositionAtPlane.Z, 100);
+
+			return MouseWorldPositionAtPlane;
+		}
+	}
+
+	return FVector::ZeroVector;
+}
+
 void AStarfoundPlayerController::BeginPlay()
 {
 	ActiveToolType = EToolType::None;
@@ -80,25 +139,11 @@ void AStarfoundPlayerController::Tick(float DeltaSeconds)
 
 	if (ActiveToolType == EToolType::Construct)
 	{
-		float MousePositionX, MousePositionY;
-		const bool bValidMousePosition = GetMousePosition(MousePositionX, MousePositionY);
+		FVector CursorLocation = GetCursorLocation();
 
-		if (bValidMousePosition)
+		if (!CursorLocation.IsZero())
 		{
-			FVector MouseWorldPosition, MouseWorldDirection;
-			const bool bValidProjection = DeprojectScreenPositionToWorld(MousePositionX, MousePositionY, MouseWorldPosition, MouseWorldDirection);
-
-			if (bValidProjection)
-			{
-				const float DistanceToPlane = MouseWorldPosition.X / (MouseWorldDirection | FVector(-1, 0, 0));
-				FVector MouseWorldPositionAtPlane = MouseWorldPosition + (MouseWorldDirection * DistanceToPlane);
-
-				// Snap to grid
-				MouseWorldPositionAtPlane.Y = FMath::GridSnap(MouseWorldPositionAtPlane.Y, 100);
-				MouseWorldPositionAtPlane.Z = FMath::GridSnap(MouseWorldPositionAtPlane.Z, 100);
-
-				CreatingBlockActor->SetActorLocation(MouseWorldPositionAtPlane);
-			}
+			CreatingBlockActor->SetActorLocation(CursorLocation);
 		}
 	}
 	else if (ActiveToolType == EToolType::Destruct)
@@ -126,6 +171,16 @@ bool AStarfoundPlayerController::InputKey(FKey Key, EInputEvent EventType, float
 	{
 		StartDestruct();
 	}
+	else if (Key == EKeys::Q)
+	{
+		ActiveToolType = EToolType::None;
+
+		if (CreatingBlockActor)
+		{
+			CreatingBlockActor->Destroy();
+			CreatingBlockActor = nullptr;
+		}
+	}
 
 	if (Key == EKeys::LeftMouseButton)
 	{
@@ -137,6 +192,11 @@ bool AStarfoundPlayerController::InputKey(FKey Key, EInputEvent EventType, float
 		else if (ActiveToolType == EToolType::Destruct)
 		{
 			DestructBlock();
+			return true;
+		}
+		else
+		{
+			MoveToCursorLocation();
 			return true;
 		}
 	}

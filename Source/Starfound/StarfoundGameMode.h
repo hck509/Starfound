@@ -19,6 +19,8 @@ public:
 	virtual void StartPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
+	ANavigation* GetNavigation() const { return Navigation; }
+
 private:
 
 	UPROPERTY(EditDefaultsOnly)

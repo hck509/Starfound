@@ -62,8 +62,17 @@ public:
 	int32 GetNumGridY() const { return (GridY * 2) + 1; }
 	int32 GetOriginX() const { return -GridX; }
 	int32 GetOriginY() const { return -GridY; }
-	int32 OriginSpaceToWorldSpaceX(int32 InX) { return InX + GetOriginX(); }
-	int32 OriginSpaceToWorldSpaceY(int32 InY) { return InY + GetOriginY(); }
+
+	int32 OriginSpaceGridToWorldSpaceGridX(int32 X) const { return X + GetOriginX(); }
+	int32 OriginSpaceGridToWorldSpaceGridY(int32 Y) const { return Y + GetOriginY(); }
+
+	int32 WorldSpaceToOriginSpaceGridX(float X) const { return FMath::RoundToInt(X / GridCellSize) - GetOriginX(); }
+	int32 WorldSpaceToOriginSpaceGridY(float Y) const { return FMath::RoundToInt(Y / GridCellSize) - GetOriginY(); }
+
+	FVector2D OriginSpaceGridToWorldSpace(const FIntPoint& Point) const
+	{
+		return FVector2D((Point.X + GetOriginX()) * GridCellSize, (Point.Y + GetOriginY()) * GridCellSize);
+	}
 
 	ABlockActor* GetBlock(int32 X, int32 Y) const;
 
