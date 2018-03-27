@@ -250,16 +250,22 @@ PathNodePool::~PathNodePool()
 }
 
 
-bool PathNodePool::PushCache( const NodeCost* nodes, int nNodes, int* start ) {
-	*start = -1;
-	if ( nNodes+cacheSize <= cacheCap ) {
-		for( int i=0; i<nNodes; ++i ) {
-			cache[i+cacheSize] = nodes[i];
+bool PathNodePool::PushCache(const MP_VECTOR<NodeCost>& Nodes, int* OutStartIndex)
+{
+	*OutStartIndex = -1;
+	
+	if (Nodes.Num() + cacheSize <= cacheCap)
+	{
+		for (int i = 0; i < Nodes.Num(); ++i)
+		{
+			cache[i + cacheSize] = Nodes[i];
 		}
-		*start = cacheSize;
-		cacheSize += nNodes;
+		*OutStartIndex = cacheSize;
+		cacheSize += Nodes.Num();
+
 		return true;
 	}
+
 	return false;
 }
 
@@ -516,7 +522,7 @@ void MicroPather::Reset()
 void MicroPather::GoalReached( PathNode* node, void* start, void* end, MP_VECTOR< void* > *_path )
 {
 	MP_VECTOR< void* >& path = *_path;
-	path.clear();
+	path.Empty();
 
 	// We have reached the goal.
 	// How long is the path? Used to allocate the vector which is returned.
@@ -533,13 +539,13 @@ void MicroPather::GoalReached( PathNode* node, void* start, void* end, MP_VECTOR
 	if ( count < 3 )
 	{
 		// Handle the short, special case.
-		path.resize(2);
+		path.SetNum(2);
 		path[0] = start;
 		path[1] = end;
 	}
 	else
 	{
-		path.resize(count);
+		path.SetNum(count);
 
 		path[0] = start;
 		path[count-1] = end;
@@ -555,21 +561,21 @@ void MicroPather::GoalReached( PathNode* node, void* start, void* end, MP_VECTOR
 	}
 
 	if ( pathCache ) {
-		costVec.clear();
+		costVec.Empty();
 
 		PathNode* pn0 = pathNodePool.FetchPathNode( path[0] );
 		PathNode* pn1 = 0;
-		for( unsigned i=0; i<path.size()-1; ++i ) {
+		for( int32 i=0; i<path.Num()-1; ++i ) {
 			pn1 = pathNodePool.FetchPathNode( path[i+1] );
-			nodeCostVec.clear();
+			nodeCostVec.Empty();
 			GetNodeNeighbors( pn0, &nodeCostVec );
-			for( unsigned j=0; j<nodeCostVec.size(); ++j ) {
+			for( int32 j=0; j<nodeCostVec.Num(); ++j ) {
 				if ( nodeCostVec[j].node == pn1 ) {
-					costVec.push_back( nodeCostVec[j].cost );
+					costVec.Add( nodeCostVec[j].cost );
 					break;
 				}
 			}
-			MPASSERT( costVec.size() == i+1 );
+			MPASSERT( costVec.Num() == i+1 );
 			pn0 = pn1;
 		}
 		pathCache->Add( path, costVec );
@@ -579,7 +585,7 @@ void MicroPather::GoalReached( PathNode* node, void* start, void* end, MP_VECTOR
 	printf( "Path: " );
 	int counter=0;
 	#endif
-	for ( unsigned k=0; k<path.size(); ++k )
+	for ( int32 k=0; k<path.Num(); ++k )
 	{
 		#ifdef DEBUG_PATH
 		graph->PrintStateInfo( path[k] );
@@ -602,13 +608,13 @@ void MicroPather::GetNodeNeighbors( PathNode* node, MP_VECTOR< NodeCost >* pNode
 {
 	if ( node->numAdjacent == 0 ) {
 		// it has no neighbors.
-		pNodeCost->resize( 0 );
+		pNodeCost->SetNum( 0 );
 	}
 	else if ( node->cacheIndex < 0 )
 	{
 		// Not in the cache. Either the first time or just didn't fit. We don't know
 		// the number of neighbors and need to call back to the client.
-		stateCostVec.resize( 0 );
+		stateCostVec.SetNum( 0 );
 		graph->AdjacentCost( node->state, &stateCostVec );
 
 		#ifdef DEBUG
@@ -616,23 +622,23 @@ void MicroPather::GetNodeNeighbors( PathNode* node, MP_VECTOR< NodeCost >* pNode
 			// If this assert fires, you have passed a state
 			// as its own neighbor state. This is impossible --
 			// bad things will happen.
-			for ( unsigned i=0; i<stateCostVec.size(); ++i )
+			for ( unsigned i=0; i<stateCostVec.Num(); ++i )
 				MPASSERT( stateCostVec[i].state != node->state );
 		}
 		#endif
 
-		pNodeCost->resize( stateCostVec.size() );
-		node->numAdjacent = stateCostVec.size();
+		pNodeCost->SetNum( stateCostVec.Num() );
+		node->numAdjacent = stateCostVec.Num();
 
 		if ( node->numAdjacent > 0 ) {
 			// Now convert to pathNodes.
 			// Note that the microsoft std library is actually pretty slow.
 			// Move things to temp vars to help.
-			const unsigned stateCostVecSize = stateCostVec.size();
+			const int32 stateCostVecSize = stateCostVec.Num();
 			const StateCost* stateCostVecPtr = &stateCostVec[0];
 			NodeCost* pNodeCostPtr = &(*pNodeCost)[0];
 
-			for( unsigned i=0; i<stateCostVecSize; ++i ) {
+			for( int32 i=0; i<stateCostVecSize; ++i ) {
 				void* state = stateCostVecPtr[i].state;
 				pNodeCostPtr[i].cost = stateCostVecPtr[i].cost;
 				pNodeCostPtr[i].node = pathNodePool.GetPathNode( frame, state, FLT_MAX, FLT_MAX, 0 );
@@ -640,14 +646,15 @@ void MicroPather::GetNodeNeighbors( PathNode* node, MP_VECTOR< NodeCost >* pNode
 
 			// Can this be cached?
 			int start = 0;
-			if ( pNodeCost->size() > 0 && pathNodePool.PushCache( pNodeCostPtr, pNodeCost->size(), &start ) ) {
+			if (pNodeCost->Num() > 0 && pathNodePool.PushCache(*pNodeCost, &start))
+			{
 				node->cacheIndex = start;
 			}
 		}
 	}
 	else {
 		// In the cache!
-		pNodeCost->resize( node->numAdjacent );
+		pNodeCost->SetNum( node->numAdjacent );
 		NodeCost* pNodeCostPtr = &(*pNodeCost)[0];
 		pathNodePool.GetCache( node->cacheIndex, node->numAdjacent, pNodeCostPtr );
 
@@ -687,7 +694,7 @@ void MicroPather::DumpStats()
 
 void MicroPather::StatesInPool( MP_VECTOR< void* >* stateVec )
 {
- 	stateVec->clear();
+ 	stateVec->Empty();
 	pathNodePool.AllStates( frame, stateVec );
 }
 
@@ -699,7 +706,7 @@ void PathNodePool::AllStates( unsigned frame, MP_VECTOR< void* >* stateVec )
     	for( unsigned i=0; i<allocate; ++i )
     	{
     	    if ( b->pathNode[i].frame == frame )
-	    	    stateVec->push_back( b->pathNode[i].state );
+	    	    stateVec->Add( b->pathNode[i].state );
     	}    
 	}           
 }   
@@ -735,18 +742,18 @@ void PathCache::Reset()
 
 void PathCache::Add( const MP_VECTOR< void* >& path, const MP_VECTOR< float >& cost )
 {
-	if ( nItems + (int)path.size() > allocated*3/4 ) {
+	if ( nItems + path.Num() > allocated*3/4 ) {
 		return;
 	}
 
-	for( unsigned i=0; i<path.size()-1; ++i ) {
+	for( int32 i=0; i<path.Num()-1; ++i ) {
 		// example: a->b->c->d
 		// Huge memory saving to only store 3 paths to 'd'
 		// Can put more in cache with also adding path to b, c, & d
 		// But uses much more memory. Experiment with this commented
 		// in and out and how to set.
 
-		void* end   = path[path.size()-1];
+		void* end   = path[path.Num()-1];
 		Item item = { path[i], end, path[i+1], cost[i] };
 		AddItem( item );
 	}
@@ -775,14 +782,14 @@ int PathCache::Solve( void* start, void* end, MP_VECTOR< void* >* path, float* t
 			return MicroPather::NO_SOLUTION;
 		}
 
-		path->clear();
-		path->push_back( start );
+		path->Empty();
+		path->Add( start );
 		*totalCost = 0;
 
 		for ( ;start != end; start=item->next, item=Find(start, end) ) {
 			MPASSERT( item );
 			*totalCost += item->cost;
-			path->push_back( item->next );
+			path->Add( item->next );
 		}
 		++hit;
 		return MicroPather::SOLVED;
@@ -862,7 +869,7 @@ int MicroPather::Solve( void* startNode, void* endNode, MP_VECTOR< void* >* path
 {
 	// Important to clear() in case the caller doesn't check the return code. There
 	// can easily be a left over path  from a previous call.
-	path->clear();
+	path->Empty();
 
 	#ifdef DEBUG_PATH
 	printf( "Path: " );
@@ -902,8 +909,8 @@ int MicroPather::Solve( void* startNode, void* endNode, MP_VECTOR< void* >* path
 														0 );
 
 	open.Push( newPathNode );	
-	stateCostVec.resize(0);
-	nodeCostVec.resize(0);
+	stateCostVec.Empty();
+	nodeCostVec.Empty(0);
 
 	while ( !open.Empty() )
 	{
@@ -1004,8 +1011,8 @@ int MicroPather::SolveForNearStates( void* startState, MP_VECTOR< StateCost >* n
 	OpenQueue open( graph );			// nodes to look at
 	ClosedSet closed( graph );
 
-	nodeCostVec.resize(0);
-	stateCostVec.resize(0);
+	nodeCostVec.Empty();
+	stateCostVec.Empty();
 
 	PathNode closedSentinel;
 	closedSentinel.Clear();
@@ -1057,7 +1064,7 @@ int MicroPather::SolveForNearStates( void* startState, MP_VECTOR< StateCost >* n
 			}
 		}
 	}	
-	near->clear();
+	near->Empty();
 
 	for( PathNode* pNode=closedSentinel.next; pNode != &closedSentinel; pNode=pNode->next ) {
 		if ( pNode->totalCost <= maxCost ) {
@@ -1065,12 +1072,12 @@ int MicroPather::SolveForNearStates( void* startState, MP_VECTOR< StateCost >* n
 			sc.cost = pNode->totalCost;
 			sc.state = pNode->state;
 
-			near->push_back( sc );
+			near->Add( sc );
 		}
 	}
 #ifdef DEBUG
-	for( unsigned i=0; i<near->size(); ++i ) {
-		for( unsigned k=i+1; k<near->size(); ++k ) {
+	for( unsigned i=0; i<near->Num(); ++i ) {
+		for( unsigned k=i+1; k<near->Num(); ++k ) {
 			MPASSERT( (*near)[i].state != (*near)[k].state );
 		}
 	}

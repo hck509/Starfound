@@ -44,7 +44,7 @@ Modified to fit in Unreal Engine4 by hck509@gmail.com
 #define GRINLIZ_NO_STL
 
 #ifdef GRINLIZ_NO_STL
-#	define MP_VECTOR MicroPanther::MPVector
+#	define MP_VECTOR TArray
 #else
 #	include <vector>
 #	define MP_VECTOR std::vector
@@ -304,7 +304,7 @@ namespace MicroPanther
 		PathNode* FetchPathNode( void* state );
 
 		// Store stuff in cache
-		bool PushCache( const NodeCost* nodes, int nNodes, int* start );
+		bool PushCache(const MP_VECTOR<NodeCost>& Nodes, int* OutStartIndex);
 
 		// Get neighbors from the cache
 		// Note - always access this with an offset. Can get re-allocated.

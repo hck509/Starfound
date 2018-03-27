@@ -83,7 +83,7 @@ bool ANavigation::FindPath(const FVector& StartLocation, const FVector& TargetLo
 
 	if (Result == MicroPanther::MicroPather::SOLVED)
 	{
-		for (uint32 i = 0; i < Path.size(); ++i)
+		for (int32 i = 0; i < Path.Num(); ++i)
 		{
 			FIntPoint Point = Graph->StateToVec2(Path[i]);
 			FVector2D WorldSpaceLocation = BlockScene->OriginSpaceGridToWorldSpace(Point);

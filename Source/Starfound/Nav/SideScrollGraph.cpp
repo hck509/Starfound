@@ -58,7 +58,7 @@ void FSideScrollGraph::AdjacentCost(void* State, MP_VECTOR<MicroPanther::StateCo
 
 			MicroPanther::StateCost Cost = { AdjacentState, Costs[i] };
 
-			AdjacentCosts->push_back(Cost);
+			AdjacentCosts->Add(Cost);
 		}
 	}
 }
