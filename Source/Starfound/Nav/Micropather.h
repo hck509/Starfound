@@ -138,11 +138,11 @@ namespace MicroPanther
 	{
 	  public:
 		  void Init(
-			  unsigned _frame,
-			  void* _state,
-			  float _costFromStart,
-			  float _estToGoal,
-			  FPathNode* _parent);
+			  uint32 InFrame,
+			  void* InState,
+			  float InCostFromStart,
+			  float InEstToGoal,
+			  FPathNode* InParent);
 
 		void Clear();
 		void InitSentinel();	
@@ -165,7 +165,7 @@ namespace MicroPanther
 		bool bInClosed;
 
 		void Unlink();
-		void AddBefore(FPathNode* addThis);
+		void AddBefore(FPathNode* Node);
 
 #ifdef DEBUG
 		void CheckList()
@@ -218,11 +218,11 @@ namespace MicroPanther
 		FPathNode* FetchPathNode(void* state);
 
 		// Store stuff in cache
-		bool PushCache(const TArray<FNodeCost>& Nodes, int* OutStartIndex);
+		bool PushCache(const TArray<FNodeCost>& Nodes, int32* OutStartIndex);
 
 		// Get neighbors from the cache
 		// Note - always access this with an offset. Can get re-allocated.
-		void GetCache(int start, int nNodes, FNodeCost* nodes);
+		void GetCache(int32 CacheIndex, int32 NumNodeCosts, TArray<FNodeCost>& OutNodeCosts);
 
 		// Return all the allocated states. Useful for visuallizing what
 		// the pather is doing.
@@ -238,8 +238,8 @@ namespace MicroPanther
 		unsigned Hash(void* voidval);
 		unsigned HashSize() const { return 1 << HashShift; }
 		unsigned HashMask()	const { return ((1 << HashShift) - 1); }
-		void AddPathNode(uint32 key, FPathNode* p);
-		FBlock* NewBlock();
+		void AddPathNode(uint32 HashKey, FPathNode* RootNode);
+		FBlock* AllocBlock();
 		FPathNode* Alloc();
 
 		FPathNode** HashTable;

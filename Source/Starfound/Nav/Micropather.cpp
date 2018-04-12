@@ -50,10 +50,10 @@ Modified to fit in Unreal Engine4 by hck509@gmail.com
 
 using namespace MicroPanther;
 
-class OpenQueue
+class FOpenQueue
 {
 public:
-	OpenQueue(FGraph* InGraph)
+	FOpenQueue(FGraph* InGraph)
 	{
 		Graph = InGraph;
 		SentinelPathNode = (FPathNode*)SentinelMem;
@@ -62,101 +62,109 @@ public:
 		SentinelPathNode->CheckList();
 #endif
 	}
-	~OpenQueue() {}
+	~FOpenQueue() {}
 
-	void Push(FPathNode* pNode);
+	void Push(FPathNode* Node);
 	FPathNode* Pop();
-	void Update(FPathNode* pNode);
 
-	bool Empty() { return SentinelPathNode->Next == SentinelPathNode; }
+	void Update(FPathNode* Node);
+
+	bool IsEmpty() const { return SentinelPathNode->Next == SentinelPathNode; }
+
+	FOpenQueue(const FOpenQueue&) = delete;
+	void operator=(const FOpenQueue&) = delete;
 
 private:
-	OpenQueue(const OpenQueue&);	// undefined and unsupported
-	void operator=(const OpenQueue&);
-
 	FPathNode* SentinelPathNode;
 	int SentinelMem[(sizeof(FPathNode) + sizeof(int)) / sizeof(int)];
-	FGraph* Graph;	// for debugging
+
+	// for debugging
+	FGraph* Graph;
 };
 
-void OpenQueue::Push(FPathNode* pNode)
+void FOpenQueue::Push(FPathNode* Node)
 {
-	MPASSERT(pNode->bInOpen == 0);
-	MPASSERT(pNode->bInClosed == 0);
+	MPASSERT(Node->bInOpen == 0);
+	MPASSERT(Node->bInClosed == 0);
 
 #ifdef DEBUG_PATH_DEEP
 	printf("Open Push: ");
-	Graph->PrintStateInfo(pNode->State);
-	printf(" total=%.1f\n", pNode->TotalCost);
+	Graph->PrintStateInfo(Node->State);
+	printf(" total=%.1f\n", Node->TotalCost);
 #endif
 
 	// Add sorted. Lowest to highest cost path. Note that the sentinel has
 	// a value of FLT_MAX, so it should always be sorted in.
-	MPASSERT(pNode->TotalCost < FLT_MAX);
-	FPathNode* iter = SentinelPathNode->Next;
+	MPASSERT(Node->TotalCost < FLT_MAX);
+	FPathNode* IterNode = SentinelPathNode->Next;
 	while (true)
 	{
-		if (pNode->TotalCost < iter->TotalCost) {
-			iter->AddBefore(pNode);
-			pNode->bInOpen = 1;
+		if (Node->TotalCost < IterNode->TotalCost)
+		{
+			IterNode->AddBefore(Node);
+			Node->bInOpen = 1;
 			break;
 		}
-		iter = iter->Next;
+		IterNode = IterNode->Next;
 	}
-	MPASSERT(pNode->bInOpen);	// make sure this was actually added.
+	MPASSERT(Node->bInOpen);	// make sure this was actually added.
 #ifdef DEBUG
 	SentinelPathNode->CheckList();
 #endif
 }
 
-FPathNode* OpenQueue::Pop()
+FPathNode* FOpenQueue::Pop()
 {
-	MPASSERT( SentinelPathNode->Next != SentinelPathNode );
-	FPathNode* pNode = SentinelPathNode->Next;
-	pNode->Unlink();
+	MPASSERT(SentinelPathNode->Next != SentinelPathNode);
+	FPathNode* Node = SentinelPathNode->Next;
+	Node->Unlink();
 #ifdef DEBUG
 	SentinelPathNode->CheckList();
 #endif
-	
-	MPASSERT( pNode->bInClosed == 0 );
-	MPASSERT( pNode->bInOpen == 1 );
-	pNode->bInOpen = 0;
-	
+
+	MPASSERT(Node->bInClosed == 0);
+	MPASSERT(Node->bInOpen == 1);
+	Node->bInOpen = 0;
+
 #ifdef DEBUG_PATH_DEEP
-	printf( "Open Pop: " );
-	Graph->PrintStateInfo( pNode->State );
-	printf( " total=%.1f\n", pNode->TotalCost );		
+	printf("Open Pop: ");
+	Graph->PrintStateInfo(Node->State);
+	printf(" total=%.1f\n", Node->TotalCost);
 #endif
-	
-	return pNode;
+
+	return Node;
 }
 
-void OpenQueue::Update( FPathNode* pNode )
+void FOpenQueue::Update(FPathNode* Node)
 {
 #ifdef DEBUG_PATH_DEEP
 	printf( "Open Update: " );		
-	Graph->PrintStateInfo( pNode->State );
-	printf( " total=%.1f\n", pNode->TotalCost );		
+	Graph->PrintStateInfo( Node->State );
+	printf( " total=%.1f\n", Node->TotalCost );		
 #endif
-	
-	MPASSERT( pNode->bInOpen );
-	
+
+	MPASSERT(Node->bInOpen);
+
 	// If the node now cost less than the one before it,
 	// move it to the front of the list.
-	if ( pNode->Prev != SentinelPathNode && pNode->TotalCost < pNode->Prev->TotalCost ) {
-		pNode->Unlink();
-		SentinelPathNode->Next->AddBefore( pNode );
+	if (Node->Prev != SentinelPathNode && Node->TotalCost < Node->Prev->TotalCost)
+	{
+		Node->Unlink();
+		SentinelPathNode->Next->AddBefore(Node);
 	}
-	
+
 	// If the node is too high, move to the right.
-	if ( pNode->TotalCost > pNode->Next->TotalCost ) {
-		FPathNode* it = pNode->Next;
-		pNode->Unlink();
-		
-		while ( pNode->TotalCost > it->TotalCost )
-			it = it->Next;
-		
-		it->AddBefore( pNode );
+	if (Node->TotalCost > Node->Next->TotalCost)
+	{
+		FPathNode* IterNode = Node->Next;
+		Node->Unlink();
+
+		while (Node->TotalCost > IterNode->TotalCost)
+		{
+			IterNode = IterNode->Next;
+		}
+
+		IterNode->AddBefore(Node);
 #ifdef DEBUG
 		SentinelPathNode->CheckList();
 #endif
@@ -164,56 +172,56 @@ void OpenQueue::Update( FPathNode* pNode )
 }
 
 
-class ClosedSet
+class FClosedSet
 {
-  public:
-	ClosedSet( FGraph* _graph )		{ this->graph = _graph; }
-	~ClosedSet()	{}
+public:
+	FClosedSet(FGraph* InGraph) { this->Graph = InGraph; }
 
-	void Add( FPathNode* pNode )
+	FClosedSet(const FClosedSet&) = delete;
+	void operator=(const FClosedSet&) = delete;
+
+	void Add(FPathNode* Node)
 	{
-		#ifdef DEBUG_PATH_DEEP
-			printf( "Closed add: " );		
-			graph->PrintStateInfo( pNode->State );
-			printf( " total=%.1f\n", pNode->TotalCost );		
-		#endif
-		#ifdef DEBUG
-		MPASSERT( pNode->bInClosed == 0 );
-		MPASSERT( pNode->bInOpen == 0 );
-		#endif
-		pNode->bInClosed = 1;
+#ifdef DEBUG_PATH_DEEP
+		printf("Closed add: ");
+		Graph->PrintStateInfo(Node->State);
+		printf(" total=%.1f\n", Node->TotalCost);
+#endif
+#ifdef DEBUG
+		MPASSERT(Node->bInClosed == 0);
+		MPASSERT(Node->bInOpen == 0);
+#endif
+		Node->bInClosed = 1;
 	}
 
-	void Remove( FPathNode* pNode )
+	void Remove(FPathNode* Node)
 	{
-		#ifdef DEBUG_PATH_DEEP
-			printf( "Closed remove: " );		
-			graph->PrintStateInfo( pNode->State );
-			printf( " total=%.1f\n", pNode->TotalCost );		
-		#endif
-		MPASSERT( pNode->bInClosed == 1 );
-		MPASSERT( pNode->bInOpen == 0 );
+#ifdef DEBUG_PATH_DEEP
+		printf("Closed remove: ");
+		Graph->PrintStateInfo(Node->State);
+		printf(" total=%.1f\n", Node->TotalCost);
+#endif
+		MPASSERT(Node->bInClosed == 1);
+		MPASSERT(Node->bInOpen == 0);
 
-		pNode->bInClosed = 0;
+		Node->bInClosed = 0;
 	}
 
-  private:
-	ClosedSet( const ClosedSet& );
-	void operator=( const ClosedSet& );
-	FGraph* graph;
+private:
+	FGraph* Graph;
 };
 
 
-FPathNodePool::FPathNodePool( unsigned InNumNodesPerBlock, unsigned _typicalAdjacent ) 
-	: FirstBlock( 0 ),
-	  Blocks( 0 ),
+FPathNodePool::FPathNodePool(unsigned InNumNodesPerBlock, unsigned _typicalAdjacent)
+	: FirstBlock(0)
+	, Blocks(0)
 #if defined( MICROPATHER_STRESS )
-	  allocate( 32 ),
+	, NumNodesPerBlock(32)
 #else
-	  NumNodesPerBlock( InNumNodesPerBlock ),
+	, NumNodesPerBlock(InNumNodesPerBlock)
 #endif
-	  NumTotalAllocatedNodes( 0 ),
-	  NumAvailableNodesOnLastBlock( 0 )
+	, NumTotalAllocatedNodes(0)
+	, NumAvailableNodesOnLastBlock(0)
 {
 	FreeMemSentinel.InitSentinel();
 
@@ -225,39 +233,41 @@ FPathNodePool::FPathNodePool( unsigned InNumNodesPerBlock, unsigned _typicalAdja
 	// will be at least that big.
 	HashShift = 3;	// 8 (only useful for stress testing) 
 #if !defined( MICROPATHER_STRESS )
-	while( HashSize() < NumNodesPerBlock )
+	while (HashSize() < NumNodesPerBlock)
 		++HashShift;
 #endif
-	HashTable = (FPathNode**)calloc( HashSize(), sizeof(FPathNode*) );
+	HashTable = (FPathNode**)calloc(HashSize(), sizeof(FPathNode*));
 
-	Blocks = FirstBlock = NewBlock();
-//	printf( "HashSize=%d allocate=%d\n", HashSize(), allocate );
+	Blocks = FirstBlock = AllocBlock();
 	NumHashCollision = 0;
+
+	//printf( "HashSize=%d allocate=%d\n", HashSize(), allocate );
 }
 
 
 FPathNodePool::~FPathNodePool()
 {
 	Clear();
-	free( FirstBlock );
-	free( Cache );
-	free( HashTable );
+	free(FirstBlock);
+	free(Cache);
+	free(HashTable);
 #ifdef TRACK_COLLISION
-	printf( "Total collide=%d HashSize=%d HashShift=%d\n", NumHashCollision, HashSize(), HashShift );
+	printf("Total collide=%d HashSize=%d HashShift=%d\n", NumHashCollision, HashSize(), HashShift);
 #endif
 }
 
 
-bool FPathNodePool::PushCache(const TArray<FNodeCost>& Nodes, int* OutStartIndex)
+bool FPathNodePool::PushCache(const TArray<FNodeCost>& Nodes, int32* OutStartIndex)
 {
 	*OutStartIndex = -1;
 	
 	if (Nodes.Num() + CacheSize <= CacheCap)
 	{
-		for (int i = 0; i < Nodes.Num(); ++i)
+		for (int32 i = 0; i < Nodes.Num(); ++i)
 		{
 			Cache[i + CacheSize] = Nodes[i];
 		}
+
 		*OutStartIndex = CacheSize;
 		CacheSize += Nodes.Num();
 
@@ -268,11 +278,15 @@ bool FPathNodePool::PushCache(const TArray<FNodeCost>& Nodes, int* OutStartIndex
 }
 
 
-void FPathNodePool::GetCache( int start, int nNodes, FNodeCost* nodes ) {
-	MPASSERT( start >= 0 && start < CacheCap );
-	MPASSERT( nNodes > 0 );
-	MPASSERT( start + nNodes <= CacheCap );
-	memcpy( nodes, &Cache[start], sizeof(FNodeCost)*nNodes );
+void FPathNodePool::GetCache(int32 CacheIndex, int32 NumNodeCosts, TArray<FNodeCost>& OutNodeCosts)
+{
+	MPASSERT(CacheIndex >= 0 && CacheIndex < CacheCap);
+	MPASSERT(NumNodeCosts > 0);
+	MPASSERT(CacheIndex + NumNodeCosts <= CacheCap);
+
+	OutNodeCosts.SetNum(NumNodeCosts);
+
+	memcpy(OutNodeCosts.GetData(), &Cache[CacheIndex], sizeof(FNodeCost) * NumNodeCosts);
 }
 
 
@@ -280,55 +294,69 @@ void FPathNodePool::Clear()
 {
 #ifdef TRACK_COLLISION
 	// Collision tracking code.
-	int collide=0;
-	for( unsigned i=0; i<HashSize(); ++i ) {
-		if ( HashTable[i] && (HashTable[i]->Child[0] || HashTable[i]->Child[1]) )
-			++collide;
+	int NumNewCollision = 0;
+	for (unsigned i = 0; i < HashSize(); ++i)
+	{
+		if (HashTable[i] && (HashTable[i]->Child[0] || HashTable[i]->Child[1]))
+		{
+			++NumNewCollision;
+		}
 	}
 	//printf( "PathNodePool %d/%d collision=%d %.1f%%\n", nAllocated, HashSize(), collide, 100.0f*(float)collide/(float)HashSize() );
-	NumHashCollision += collide;
+	NumHashCollision += NumNewCollision;
 #endif
 
-	FBlock* b = Blocks;
-	while( b ) {
-		FBlock* temp = b->NextBlock;
-		if ( b != FirstBlock ) {
-			free( b );
+	FBlock* IterBlock = Blocks;
+	while (IterBlock)
+	{
+		FBlock* NextBlock = IterBlock->NextBlock;
+		if (IterBlock != FirstBlock)
+		{
+			free(IterBlock);
 		}
-		b = temp;
+		IterBlock = NextBlock;
 	}
-	Blocks = FirstBlock;	// Don't delete the first block (we always need at least that much memory.)
 
-	// Set up for new allocations (but don't do work we don't need to. Reset/Clear can be called frequently.)
-	if ( NumTotalAllocatedNodes > 0 ) {
+	// Don't delete the first block (we always need at least that much memory.)
+	Blocks = FirstBlock;	
+
+	// Set up for new allocations (but don't do work we don't need to. Reset/Clear can be called frequently)
+	if (NumTotalAllocatedNodes > 0)
+	{
 		FreeMemSentinel.Next = &FreeMemSentinel;
 		FreeMemSentinel.Prev = &FreeMemSentinel;
-	
-		memset( HashTable, 0, sizeof(FPathNode*)*HashSize() );
-		for( unsigned i=0; i<NumNodesPerBlock; ++i ) {
-			FreeMemSentinel.AddBefore( &FirstBlock->PathNode[i] );
+
+		memset(HashTable, 0, sizeof(FPathNode*) * HashSize());
+
+		for (uint32 i = 0; i < NumNodesPerBlock; ++i)
+		{
+			FreeMemSentinel.AddBefore(&FirstBlock->PathNode[i]);
 		}
 	}
+
 	NumAvailableNodesOnLastBlock = NumNodesPerBlock;
 	NumTotalAllocatedNodes = 0;
 	CacheSize = 0;
 }
 
 
-FPathNodePool::FBlock* FPathNodePool::NewBlock()
+FPathNodePool::FBlock* FPathNodePool::AllocBlock()
 {
-	FBlock* block = (FBlock*) calloc( 1, sizeof(FBlock) + sizeof(FPathNode)*(NumNodesPerBlock-1) );
-	block->NextBlock = 0;
+	FBlock* NewBlock = (FBlock*) calloc(1, sizeof(FBlock) + sizeof(FPathNode)*(NumNodesPerBlock - 1));
+	NewBlock->NextBlock = 0;
 
 	NumAvailableNodesOnLastBlock += NumNodesPerBlock;
-	for( unsigned i=0; i<NumNodesPerBlock; ++i ) {
-		FreeMemSentinel.AddBefore( &block->PathNode[i] );
+
+	for (uint32 i = 0; i < NumNodesPerBlock; ++i)
+	{
+		FreeMemSentinel.AddBefore(&NewBlock->PathNode[i]);
 	}
-	return block;
+
+	return NewBlock;
 }
 
 
-unsigned FPathNodePool::Hash( void* voidval ) 
+uint32 FPathNodePool::Hash(void* voidval)
 {
 	/*
 		Spent quite some time on this, and the result isn't quite satifactory. The
@@ -379,102 +407,125 @@ unsigned FPathNodePool::Hash( void* voidval )
 }
 
 
-
 FPathNode* FPathNodePool::Alloc()
 {
-	if ( FreeMemSentinel.Next == &FreeMemSentinel ) {
-		MPASSERT( NumAvailableNodesOnLastBlock == 0 );
+	if (FreeMemSentinel.Next == &FreeMemSentinel)
+	{
+		MPASSERT(NumAvailableNodesOnLastBlock == 0);
 
-		FBlock* b = NewBlock();
-		b->NextBlock = Blocks;
-		Blocks = b;
-		MPASSERT( FreeMemSentinel.Next != &FreeMemSentinel );
+		FBlock* NewBlock = AllocBlock();
+		NewBlock->NextBlock = Blocks;
+		Blocks = NewBlock;
+		MPASSERT(FreeMemSentinel.Next != &FreeMemSentinel);
 	}
-	FPathNode* pathNode = FreeMemSentinel.Next;
-	pathNode->Unlink();
+	FPathNode* NewNode = FreeMemSentinel.Next;
+	NewNode->Unlink();
 
 	++NumTotalAllocatedNodes;
-	MPASSERT( NumAvailableNodesOnLastBlock > 0 );
+	MPASSERT(NumAvailableNodesOnLastBlock > 0);
 	--NumAvailableNodesOnLastBlock;
-	return pathNode;
+
+	return NewNode;
 }
 
 
-void FPathNodePool::AddPathNode( unsigned key, FPathNode* root )
+void FPathNodePool::AddPathNode(uint32 HashKey, FPathNode* RootNode)
 {
-	if ( HashTable[key] ) {
-		FPathNode* p = HashTable[key];
-		while( true ) {
-			int dir = (root->State < p->State) ? 0 : 1;
-			if ( p->Child[dir] ) {
-				p = p->Child[dir];
+	if (HashTable[HashKey])
+	{
+		FPathNode* Node = HashTable[HashKey];
+
+		while (true)
+		{
+			int dir = (RootNode->State < Node->State) ? 0 : 1;
+			if (Node->Child[dir])
+			{
+				Node = Node->Child[dir];
 			}
-			else {
-				p->Child[dir] = root;
+			else
+			{
+				Node->Child[dir] = RootNode;
 				break;
 			}
 		}
 	}
-	else {
-		HashTable[key] = root;
+	else
+	{
+		HashTable[HashKey] = RootNode;
 	}
 }
 
 
-FPathNode* FPathNodePool::FetchPathNode( void* state )
+FPathNode* FPathNodePool::FetchPathNode(void* State)
 {
-	unsigned key = Hash( state );
+	uint32 HashKey = Hash(State);
 
-	FPathNode* root = HashTable[key];
-	while( root ) {
-		if ( root->State == state ) {
+	FPathNode* RootNode = HashTable[HashKey];
+	while (RootNode)
+	{
+		if (RootNode->State == State)
+		{
 			break;
 		}
-		root = ( state < root->State ) ? root->Child[0] : root->Child[1];
+		RootNode = (State < RootNode->State) ? RootNode->Child[0] : RootNode->Child[1];
 	}
-	MPASSERT( root );
-	return root;
+
+	MPASSERT(RootNode);
+
+	return RootNode;
 }
 
 
-FPathNode* FPathNodePool::GetPathNode( unsigned frame, void* _state, float _costFromStart, float _estToGoal, FPathNode* _parent )
+FPathNode* FPathNodePool::GetPathNode(uint32 Frame, void* State, float CostFromStart, float EstToGoal, FPathNode* ParentNode)
 {
-	unsigned key = Hash( _state );
+	uint32 HashKey = Hash(State);
 
-	FPathNode* root = HashTable[key];
-	while( root ) {
-		if ( root->State == _state ) {
-			if ( root->Frame == frame )		// This is the correct state and correct frame.
+	FPathNode* RootNode = HashTable[HashKey];
+	while (RootNode)
+	{
+		if (RootNode->State == State)
+		{
+			if (RootNode->Frame == Frame)
+			{
+				// This is the correct state and correct frame.
 				break;
+			}
+
 			// Correct state, wrong frame.
-			root->Init( frame, _state, _costFromStart, _estToGoal, _parent );
+			RootNode->Init(Frame, State, CostFromStart, EstToGoal, ParentNode);
+
 			break;
 		}
-		root = ( _state < root->State ) ? root->Child[0] : root->Child[1];
+
+		RootNode = (State < RootNode->State) ? RootNode->Child[0] : RootNode->Child[1];
 	}
-	if ( !root ) {
+
+	if (!RootNode)
+	{
 		// allocate new one
-		root = Alloc();
-		root->Clear();
-		root->Init( frame, _state, _costFromStart, _estToGoal, _parent );
-		AddPathNode( key, root );
+		RootNode = Alloc();
+		RootNode->Clear();
+		RootNode->Init(Frame, State, CostFromStart, EstToGoal, ParentNode);
+		AddPathNode(HashKey, RootNode);
 	}
-	return root;
+
+	return RootNode;
 }
 
 
-void FPathNode::Init(	unsigned _frame,
-						void* _state,
-						float _costFromStart, 
-						float _estToGoal, 
-						FPathNode* _parent )
+void FPathNode::Init(
+	uint32 InFrame,
+	void* InState,
+	float InCostFromStart,
+	float InEstToGoal,
+	FPathNode* InParent)
 {
-	State = _state;
-	CostFromStart = _costFromStart;
-	EstToGoal = _estToGoal;
+	State = InState;
+	CostFromStart = InCostFromStart;
+	EstToGoal = InEstToGoal;
 	CalcTotalCost();
-	Parent = _parent;
-	Frame = _frame;
+	Parent = InParent;
+	Frame = InFrame;
 	bInOpen = 0;
 	bInClosed = 0;
 }
@@ -482,9 +533,9 @@ void FPathNode::Init(	unsigned _frame,
 
 void FPathNode::Clear()
 {
-	memset( this, 0, sizeof( FPathNode ) );
+	memset(this, 0, sizeof(FPathNode));
 	NumAdjacent = -1;
-	CacheIndex  = -1;
+	CacheIndex = -1;
 }
 
 void MicroPanther::FPathNode::InitSentinel()
@@ -501,32 +552,36 @@ void MicroPanther::FPathNode::Unlink()
 	Next = Prev = 0;
 }
 
-void MicroPanther::FPathNode::AddBefore(FPathNode* addThis)
+void MicroPanther::FPathNode::AddBefore(FPathNode* Node)
 {
-	addThis->Next = this;
-	addThis->Prev = Prev;
-	Prev->Next = addThis;
-	Prev = addThis;
+	Node->Next = this;
+	Node->Prev = Prev;
+	Prev->Next = Node;
+	Prev = Node;
 }
 
 void MicroPanther::FPathNode::CalcTotalCost()
 {
 	if (CostFromStart < FLT_MAX && EstToGoal < FLT_MAX)
+	{
 		TotalCost = CostFromStart + EstToGoal;
+	}
 	else
+	{
 		TotalCost = FLT_MAX;
+	}
 }
 
-FMicroPather::FMicroPather( FGraph* _graph, unsigned allocate, unsigned typicalAdjacent, bool cache )
-	:	PathNodePool( allocate, typicalAdjacent ),
-		Graph( _graph ),
-		Frame( 0 )
+FMicroPather::FMicroPather(FGraph* InGraph, uint32 allocate, unsigned typicalAdjacent, bool cache)
+	: PathNodePool(allocate, typicalAdjacent),
+	Graph(InGraph),
+	Frame(0)
 {
-	MPASSERT( allocate );
-	MPASSERT( typicalAdjacent );
+	MPASSERT(allocate);
+	MPASSERT(typicalAdjacent);
 	PathCache = 0;
-	if ( cache ) {
-		PathCache = new FPathCache( allocate*4 );	// untuned arbitrary constant	
+	if (cache) {
+		PathCache = new FPathCache(allocate * 4);	// untuned arbitrary constant	
 	}
 }
 
@@ -684,7 +739,7 @@ void FMicroPather::GetNodeNeighbors( FPathNode* node, TArray< FNodeCost >* pNode
 		// In the cache!
 		pNodeCost->SetNum( node->NumAdjacent );
 		FNodeCost* pNodeCostPtr = &(*pNodeCost)[0];
-		PathNodePool.GetCache( node->CacheIndex, node->NumAdjacent, pNodeCostPtr );
+		PathNodePool.GetCache(node->CacheIndex, node->NumAdjacent, *pNodeCost);
 
 		// A node is uninitialized (even if memory is allocated) if it is from a previous frame.
 		// Check for that, and Init() as necessary.
@@ -927,8 +982,8 @@ int FMicroPather::Solve( void* startNode, void* endNode, TArray< void* >* path, 
 
 	++Frame;
 
-	OpenQueue open( Graph );
-	ClosedSet closed( Graph );
+	FOpenQueue open( Graph );
+	FClosedSet closed( Graph );
 	
 	FPathNode* newPathNode = PathNodePool.GetPathNode(	Frame, 
 														startNode, 
@@ -940,7 +995,7 @@ int FMicroPather::Solve( void* startNode, void* endNode, TArray< void* >* path, 
 	StateCosts.Empty();
 	NodeCosts.Empty(0);
 
-	while ( !open.Empty() )
+	while ( !open.IsEmpty() )
 	{
 		FPathNode* node = open.Pop();
 		
@@ -1036,8 +1091,8 @@ int FMicroPather::SolveForNearStates( void* startState, TArray< FStateCost >* ne
 
 	++Frame;
 
-	OpenQueue open( Graph );			// nodes to look at
-	ClosedSet closed( Graph );
+	FOpenQueue open( Graph );			// nodes to look at
+	FClosedSet closed( Graph );
 
 	NodeCosts.Empty();
 	StateCosts.Empty();
@@ -1050,7 +1105,7 @@ int FMicroPather::SolveForNearStates( void* startState, TArray< FStateCost >* ne
 	FPathNode* newPathNode = PathNodePool.GetPathNode( Frame, startState, 0, 0, 0 );
 	open.Push( newPathNode );
 	
-	while ( !open.Empty() )
+	while ( !open.IsEmpty() )
 	{
 		FPathNode* node = open.Pop();	// smallest dist
 		closed.Add( node );				// add to the things we've looked at
