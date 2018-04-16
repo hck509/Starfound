@@ -275,13 +275,13 @@ namespace MicroPanther
 	class FPathCache
 	{
 	public:
-		struct Item
+		struct FItem
 		{
 			// The key:
 			void* Start;
 			void* End;
 
-			bool KeyEqual(const Item& item) const { return Start == item.Start && End == item.End; }
+			bool KeyEqual(const FItem& item) const { return Start == item.Start && End == item.End; }
 			bool Empty() const { return Start == 0 && End == 0; }
 
 			// Data:
@@ -313,17 +313,17 @@ namespace MicroPanther
 		void AddNoSolution(void* end, void* states[], int count);
 		int Solve(void* startState, void* endState, TArray<void*>* path, float* totalCost);
 
-		int AllocatedBytes() const { return NumItemsAllocated * sizeof(Item); }
-		int UsedBytes() const { return NumItems * sizeof(Item); }
+		int AllocatedBytes() const { return NumItemsAllocated * sizeof(FItem); }
+		int UsedBytes() const { return NumItems * sizeof(FItem); }
 
 		int NumHit;
 		int NumMiss;
 
 	private:
-		void AddItem(const Item& item);
-		const Item* Find(void* start, void* end);
+		void AddItem(const FItem& item);
+		const FItem* Find(void* start, void* end);
 
-		Item* Items;
+		FItem* Items;
 		int32 NumItemsAllocated;
 		int32 NumItems;
 	};
@@ -395,7 +395,7 @@ namespace MicroPanther
 			@param totalCost	Output, the cost of the path, if found.
 			@return				Success or failure, expressed as SOLVED, NO_SOLUTION, or START_END_SAME.
 		*/
-		int Solve(void* startState, void* endState, TArray<void*>* path, float* totalCost);
+		int Solve(void* StartState, void* EndState, TArray<void*>* Path, float* TotalCost);
 
 		/**
 			Find all the states within a given cost from startState.
@@ -414,8 +414,8 @@ namespace MicroPanther
 		void Reset();
 
 		// Debugging function to return all states that were used by the last "solve" 
-		void StatesInPool(TArray<void*>* stateVec);
-		void GetCacheData(FCacheData* data);
+		void Debug_StatesInPool(TArray<void*>* stateVec);
+		void Debug_GetCacheData(FCacheData* data);
 
 	  private:
 		  FMicroPather(const FMicroPather&);	// undefined and unsupported

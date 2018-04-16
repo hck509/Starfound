@@ -478,7 +478,7 @@ FPathNode* FPathNodePool::FetchPathNode(void* State)
 
 FPathNode* FPathNodePool::GetPathNode(uint32 Frame, void* State, float CostFromStart, float EstToGoal, FPathNode* ParentNode)
 {
-	uint32 HashKey = Hash(State);
+	const uint32 HashKey = Hash(State);
 
 	FPathNode* RootNode = HashTable[HashKey];
 	while (RootNode)
@@ -783,7 +783,7 @@ void MicroPather::DumpStats()
 */
 #endif
 
-void FMicroPather::StatesInPool(TArray<void*>* stateVec)
+void FMicroPather::Debug_StatesInPool(TArray<void*>* stateVec)
 {
  	stateVec->Empty();
 	PathNodePool.AllStates( Frame, stateVec );
@@ -803,7 +803,7 @@ void FPathNodePool::AllStates(uint32 frame, TArray<void*>* stateVec)
 
 FPathCache::FPathCache(int NumItemsToAllocate)
 {
-	Items = new Item[NumItemsToAllocate];
+	Items = new FItem[NumItemsToAllocate];
 	memset(Items, 0, sizeof(*Items) * NumItemsToAllocate);
 	NumItemsAllocated = NumItemsToAllocate;
 	NumItems = 0;
@@ -842,7 +842,7 @@ void FPathCache::Add(const TArray< void* >& Path, const TArray< float >& Costs)
 		// But uses much more memory. Experiment with this commented
 		// in and out and how to set.
 
-		Item item;
+		FItem item;
 		item.Start = Path[i];
 		item.End = Path[Path.Num() - 1];
 		item.Next = Path[i + 1];
@@ -861,7 +861,7 @@ void FPathCache::AddNoSolution(void* End, void* States[], int Count)
 
 	for (int i = 0; i < Count; ++i)
 	{
-		Item item;
+		FItem item;
 		item.Start = States[i];
 		item.End = End;
 		item.Next = 0;
@@ -873,10 +873,12 @@ void FPathCache::AddNoSolution(void* End, void* States[], int Count)
 
 int FPathCache::Solve(void* Start, void* End, TArray<void*>* Path, float* TotalCosts)
 {
-	const Item* item = Find(Start, End);
+	const FItem* Item = Find(Start, End);
 
-	if (item) {
-		if (item->Cost == FLT_MAX) {
+	if (Item)
+	{
+		if (Item->Cost == FLT_MAX)
+		{
 			++NumHit;
 			return FMicroPather::NO_SOLUTION;
 		}
@@ -885,139 +887,168 @@ int FPathCache::Solve(void* Start, void* End, TArray<void*>* Path, float* TotalC
 		Path->Add(Start);
 		*TotalCosts = 0;
 
-		for (; Start != End; Start = item->Next, item = Find(Start, End)) {
-			MPASSERT(item);
-			*TotalCosts += item->Cost;
-			Path->Add(item->Next);
+		for (; Start != End; Start = Item->Next, Item = Find(Start, End))
+		{
+			MPASSERT(Item);
+			*TotalCosts += Item->Cost;
+			Path->Add(Item->Next);
 		}
 		++NumHit;
 		return FMicroPather::SOLVED;
 	}
+
 	++NumMiss;
+
 	return FMicroPather::NOT_CACHED;
 }
 
-void FPathCache::AddItem( const Item& item )
+void FPathCache::AddItem(const FItem& Item)
 {
-	MPASSERT( NumItemsAllocated );
-	unsigned index = item.Hash() % NumItemsAllocated;
-	while( true ) {
-		if ( Items[index].Empty() ) {
-			Items[index] = item;
+	MPASSERT(NumItemsAllocated);
+
+	uint32 Index = Item.Hash() % NumItemsAllocated;
+
+	while (true)
+	{
+		if (Items[Index].Empty())
+		{
+			Items[Index] = Item;
 			++NumItems;
+
 #ifdef DEBUG_CACHING
-			GLOUTPUT(( "Add: start=%x next=%x end=%x\n", item.Start, item.Next, item.End ));
+			GLOUTPUT(("Add: start=%x next=%x end=%x\n", Item.Start, Item.Next, Item.End));
 #endif
 			break;
 		}
-		else if ( Items[index].KeyEqual( item ) ) {
-			MPASSERT( (Items[index].Next && item.Next) || (Items[index].Next==0 && item.Next == 0) );
+		else if (Items[Index].KeyEqual(Item))
+		{
+			MPASSERT((Items[Index].Next && Item.Next) || (Items[Index].Next == 0 && Item.Next == 0));
 			// do nothing; in cache
 			break;
 		}
-		++index;
-		if ( index == NumItemsAllocated )
-			index = 0;
+
+		++Index;
+		if (Index == NumItemsAllocated)
+		{
+			Index = 0;
+		}
 	}
 }
 
-
-const FPathCache::Item* FPathCache::Find( void* start, void* end )
+const FPathCache::FItem* FPathCache::Find(void* Start, void* End)
 {
-	MPASSERT( NumItemsAllocated );
-	Item fake = { start, end, 0, 0 };
-	unsigned index = fake.Hash() % NumItemsAllocated;
-	while( true ) {
-		if ( Items[index].Empty() ) {
+	MPASSERT(NumItemsAllocated);
+
+	FItem Fake = { Start, End, 0, 0 };
+
+	uint32 Index = Fake.Hash() % NumItemsAllocated;
+
+	while (true)
+	{
+		if (Items[Index].Empty())
+		{
 			return 0;
 		}
-		if ( Items[index].KeyEqual( fake )) {
-			return Items + index;
+
+		if (Items[Index].KeyEqual(Fake))
+		{
+			return Items + Index;
 		}
-		++index;
-		if ( index == NumItemsAllocated )
-			index = 0;
+
+		++Index;
+
+		if (Index == NumItemsAllocated)
+		{
+			Index = 0;
+		}
 	}
 }
 
-
-void FMicroPather::GetCacheData( FCacheData* data )
+void FMicroPather::Debug_GetCacheData(FCacheData* data)
 {
-	memset( data, 0, sizeof(*data) );
+	memset(data, 0, sizeof(*data));
 
-	if ( PathCache ) {
+	if (PathCache)
+	{
 		data->BytesAllocated = PathCache->AllocatedBytes();
 		data->BytesUsed = PathCache->UsedBytes();
-		data->MemoryFraction = (float)( (double)data->BytesUsed / (double)data->BytesAllocated );
+		data->MemoryFraction = (float)((double)data->BytesUsed / (double)data->BytesAllocated);
 
 		data->NumHit = PathCache->NumHit;
 		data->NumMiss = PathCache->NumMiss;
-		if ( data->NumHit + data->NumMiss ) {
-		data->HitFraction = (float)( (double)(data->NumHit) / (double)(data->NumHit + data->NumMiss) );
-	}
-		else {
+
+		if (data->NumHit + data->NumMiss)
+		{
+			data->HitFraction = (float)((double)(data->NumHit) / (double)(data->NumHit + data->NumMiss));
+		}
+		else
+		{
 			data->HitFraction = 0;
 		}
 	}
 }
 
-
-
-int FMicroPather::Solve( void* startNode, void* endNode, TArray< void* >* path, float* cost )
+int FMicroPather::Solve(void* StartState, void* EndState, TArray<void*>* Path, float* TotalCost)
 {
 	// Important to clear() in case the caller doesn't check the return code. There
 	// can easily be a left over path  from a previous call.
-	path->Empty();
+	Path->Empty();
 
-	#ifdef DEBUG_PATH
-	printf( "Path: " );
-	Graph->PrintStateInfo( startNode );
-	printf( " --> " );
-	Graph->PrintStateInfo( endNode );
-	printf( " min cost=%f\n", Graph->LeastCostEstimate( startNode, endNode ) );
-	#endif
+#ifdef DEBUG_PATH
+	printf("Path: ");
+	Graph->PrintStateInfo(StartState);
+	printf(" --> ");
+	Graph->PrintStateInfo(EndState);
+	printf(" min cost=%f\n", Graph->LeastCostEstimate(StartState, EndState));
+#endif
 
-	*cost = 0.0f;
+	*TotalCost = 0.0f;
 
-	if ( startNode == endNode )
+	if (StartState == EndState)
+	{
 		return START_END_SAME;
+	}
 
-	if ( PathCache ) {
-		int cacheResult = PathCache->Solve( startNode, endNode, path, cost );
-		if ( cacheResult == SOLVED || cacheResult == NO_SOLUTION ) {
-		#ifdef DEBUG_CACHING
-			GLOUTPUT(( "PathCache hit. result=%s\n", cacheResult == SOLVED ? "solved" : "no_solution" ));
-		#endif
-			return cacheResult;
+	if (PathCache)
+	{
+		const int CacheResult = PathCache->Solve(StartState, EndState, Path, TotalCost);
+
+		if (CacheResult == SOLVED || CacheResult == NO_SOLUTION)
+		{
+#ifdef DEBUG_CACHING
+			GLOUTPUT(("PathCache hit. result=%s\n", CacheResult == SOLVED ? "solved" : "no_solution"));
+#endif
+			return CacheResult;
 		}
-		#ifdef DEBUG_CACHING
-		GLOUTPUT(( "PathCache miss\n" ));
-		#endif
+#ifdef DEBUG_CACHING
+		GLOUTPUT(("PathCache miss\n"));
+#endif
 	}
 
 	++Frame;
 
-	FOpenQueue open( Graph );
-	FClosedSet closed( Graph );
-	
-	FPathNode* newPathNode = PathNodePool.GetPathNode(	Frame, 
-														startNode, 
-														0, 
-														Graph->LeastCostEstimate( startNode, endNode ), 
-														0 );
+	FOpenQueue Open(Graph);
+	FClosedSet Closed(Graph);
 
-	open.Push( newPathNode );	
+	FPathNode* NewPathNode = PathNodePool.GetPathNode(
+		Frame,
+		StartState,
+		0,
+		Graph->LeastCostEstimate(StartState, EndState),
+		0);
+
+	Open.Push( NewPathNode );	
 	TempStateCosts.Empty();
 	TempNodeCosts.Empty(0);
 
-	while ( !open.IsEmpty() )
+	while ( !Open.IsEmpty() )
 	{
-		FPathNode* node = open.Pop();
+		FPathNode* node = Open.Pop();
 		
-		if ( node->State == endNode )
+		if ( node->State == EndState )
 		{
-			GoalReached( node, startNode, endNode, path );
-			*cost = node->CostFromStart;
+			GoalReached( node, StartState, EndState, Path );
+			*TotalCost = node->CostFromStart;
 			#ifdef DEBUG_PATH
 			DumpStats();
 			#endif
@@ -1025,7 +1056,7 @@ int FMicroPather::Solve( void* startNode, void* endNode, TArray< void* >* path, 
 		}
 		else
 		{
-			closed.Add( node );
+			Closed.Add( node );
 
 			// We have not reached the goal - add the neighbors.
 			GetNodeNeighbors( node, &TempNodeCosts );
@@ -1050,21 +1081,21 @@ int FMicroPather::Solve( void* startNode, void* endNode, TArray< void* >* path, 
 					if ( newCost < child->CostFromStart ) {
 						child->Parent = node;
 						child->CostFromStart = newCost;
-						child->EstToGoal = Graph->LeastCostEstimate( child->State, endNode );
+						child->EstToGoal = Graph->LeastCostEstimate( child->State, EndState );
 						child->CalcTotalCost();
 						if ( inOpen ) {
-							open.Update( child );
+							Open.Update( child );
 						}
 					}
 				}
 				else {
 					child->Parent = node;
 					child->CostFromStart = newCost;
-					child->EstToGoal = Graph->LeastCostEstimate( child->State, endNode ),
+					child->EstToGoal = Graph->LeastCostEstimate( child->State, EndState ),
 					child->CalcTotalCost();
 					
 					MPASSERT( !child->bInOpen && !child->bInClosed );
-					open.Push( child );
+					Open.Push( child );
 				}
 			}
 		}					
@@ -1074,7 +1105,7 @@ int FMicroPather::Solve( void* startNode, void* endNode, TArray< void* >* path, 
 	#endif
 	if ( PathCache ) {
 		// Could add a bunch more with a little tracking.
-		PathCache->AddNoSolution( endNode, &startNode, 1 );
+		PathCache->AddNoSolution( EndState, &StartState, 1 );
 	}
 	return NO_SOLUTION;		
 }	
