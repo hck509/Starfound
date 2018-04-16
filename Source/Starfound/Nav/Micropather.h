@@ -226,7 +226,7 @@ namespace MicroPanther
 
 		// Return all the allocated states. Useful for visuallizing what
 		// the pather is doing.
-		void AllStates(unsigned frame, TArray< void* >* stateVec);
+		void AllStates(uint32 frame, TArray<void*>* stateVec);
 
 	private:
 		struct FBlock
@@ -302,8 +302,11 @@ namespace MicroPanther
 			}
 		};
 
-		FPathCache(int itemsToAllocate);
+		explicit FPathCache(int NumItemsToAllocate);
+		FPathCache(const FPathCache&) = delete;
 		~FPathCache();
+		
+		FPathCache& operator = (const FPathCache&) = delete;
 		
 		void Reset();
 		void Add(const TArray<void*>& path, const TArray<float>& cost);
@@ -361,26 +364,26 @@ namespace MicroPanther
 			Construct the pather, passing a pointer to the object that implements
 			the Graph callbacks.
 
-			@param graph		The "map" that implements the Graph callbacks.
-			@param allocate		How many states should be internally allocated at a time. This
-								can be hard to get correct. The higher the value, the more memory
-								MicroPather will use.
-								- If you have a small map (a few thousand states?) it may make sense
-								  to pass in the maximum value. This will cache everything, and MicroPather
-								  will only need one main memory allocation. For a chess board, allocate 
-								  would be set to 8x8 (64)
-								- If your map is large, something like 1/4 the number of possible
-								  states is good.
-							    - If your state space is huge, use a multiple (5-10x) of the normal
-								  path. "Occasionally" call Reset() to free unused memory.
-			@param typicalAdjacent	Used to determine cache size. The typical number of adjacent states
-									to a given state. (On a chessboard, 8.) Higher values use a little
-									more memory.
-			@param cache		Turn on path caching. Uses more memory (yet again) but at a huge speed
+			@param InGraph			The "map" that implements the Graph callbacks.
+			@param NumStatesAlloc	How many states should be internally allocated at a time. This
+									can be hard to get correct. The higher the value, the more memory
+									MicroPather will use.
+									- If you have a small map (a few thousand states?) it may make sense
+									  to pass in the maximum value. This will cache everything, and MicroPather
+									  will only need one main memory allocation. For a chess board, allocate
+									  would be set to 8x8 (64)
+									- If your map is large, something like 1/4 the number of possible
+									  states is good.
+									- If your state space is huge, use a multiple (5-10x) of the normal
+									  path. "Occasionally" call Reset() to free unused memory.
+			@param NumTypicalAdjacent	Used to determine cache size. The typical number of adjacent states
+										to a given state. (On a chessboard, 8.) Higher values use a little
+										more memory.
+			@param bUseCache	Turn on path caching. Uses more memory (yet again) but at a huge speed
 								advantage if you may call the pather with the same path or sub-path, which
 								is common for pathing over maps in games.
 		*/
-		FMicroPather(FGraph* graph, unsigned allocate = 250, unsigned typicalAdjacent = 6, bool cache = true);
+		FMicroPather(FGraph* InGraph, uint32 NumStatesAlloc = 250, uint32 NumTypicalAdjacent = 6, bool bUseCache = true);
 		~FMicroPather();
 
 		/**
@@ -429,11 +432,11 @@ namespace MicroPanther
 		  FPathNodePool PathNodePool;
 
 		  // local to Solve, but put here to reduce memory allocation
-		  TArray<FStateCost> StateCosts;
+		  TArray<FStateCost> TempStateCosts;
 
 		  // local to Solve, but put here to reduce memory allocation
-		  TArray<FNodeCost> NodeCosts;	
-		  TArray<float>	Costs;
+		  TArray<FNodeCost> TempNodeCosts;	
+		  TArray<float>	TempCosts;
 
 		  FGraph* Graph;
 
