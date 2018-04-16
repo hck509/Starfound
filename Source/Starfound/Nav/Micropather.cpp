@@ -1037,77 +1037,88 @@ int FMicroPather::Solve(void* StartState, void* EndState, TArray<void*>* Path, f
 		Graph->LeastCostEstimate(StartState, EndState),
 		0);
 
-	Open.Push( NewPathNode );	
+	Open.Push(NewPathNode);
+
 	TempStateCosts.Empty();
 	TempNodeCosts.Empty(0);
 
-	while ( !Open.IsEmpty() )
+	while (!Open.IsEmpty())
 	{
-		FPathNode* node = Open.Pop();
+		FPathNode* Node = Open.Pop();
 		
-		if ( node->State == EndState )
+		if (Node->State == EndState)
 		{
-			GoalReached( node, StartState, EndState, Path );
-			*TotalCost = node->CostFromStart;
-			#ifdef DEBUG_PATH
+			GoalReached(Node, StartState, EndState, Path);
+			*TotalCost = Node->CostFromStart;
+
+#ifdef DEBUG_PATH
 			DumpStats();
-			#endif
+#endif
 			return SOLVED;
 		}
 		else
 		{
-			Closed.Add( node );
+			Closed.Add(Node);
 
 			// We have not reached the goal - add the neighbors.
-			GetNodeNeighbors( node, &TempNodeCosts );
+			GetNodeNeighbors(Node, &TempNodeCosts);
 
-			for( int i=0; i<node->NumAdjacent; ++i )
+			for (int i = 0; i < Node->NumAdjacent; ++i)
 			{
 				// Not actually a neighbor, but useful. Filter out infinite cost.
-				if ( TempNodeCosts[i].Cost == FLT_MAX ) {
+				if (TempNodeCosts[i].Cost == FLT_MAX)
+				{
 					continue;
 				}
-				FPathNode* child = TempNodeCosts[i].Node;
-				float newCost = node->CostFromStart + TempNodeCosts[i].Cost;
 
-				FPathNode* inOpen   = child->bInOpen ? child : 0;
-				FPathNode* inClosed = child->bInClosed ? child : 0;
-				FPathNode* inEither = (FPathNode*)( ((MP_UPTR)inOpen) | ((MP_UPTR)inClosed) );
+				FPathNode* ChildNode = TempNodeCosts[i].Node;
+				float NewCost = Node->CostFromStart + TempNodeCosts[i].Cost;
 
-				MPASSERT( inEither != node );
-				MPASSERT( !( inOpen && inClosed ) );
+				FPathNode* inOpen   = ChildNode->bInOpen ? ChildNode : 0;
+				FPathNode* inClosed = ChildNode->bInClosed ? ChildNode : 0;
+				FPathNode* inEither = (FPathNode*)(((MP_UPTR)inOpen) | ((MP_UPTR)inClosed));
 
-				if ( inEither ) {
-					if ( newCost < child->CostFromStart ) {
-						child->Parent = node;
-						child->CostFromStart = newCost;
-						child->EstToGoal = Graph->LeastCostEstimate( child->State, EndState );
-						child->CalcTotalCost();
-						if ( inOpen ) {
-							Open.Update( child );
+				MPASSERT(inEither != Node);
+				MPASSERT(!(inOpen && inClosed));
+
+				if (inEither)
+				{
+					if (NewCost < ChildNode->CostFromStart)
+					{
+						ChildNode->Parent = Node;
+						ChildNode->CostFromStart = NewCost;
+						ChildNode->EstToGoal = Graph->LeastCostEstimate(ChildNode->State, EndState);
+						ChildNode->CalcTotalCost();
+						if (inOpen)
+						{
+							Open.Update(ChildNode);
 						}
 					}
 				}
-				else {
-					child->Parent = node;
-					child->CostFromStart = newCost;
-					child->EstToGoal = Graph->LeastCostEstimate( child->State, EndState ),
-					child->CalcTotalCost();
-					
-					MPASSERT( !child->bInOpen && !child->bInClosed );
-					Open.Push( child );
+				else
+				{
+					ChildNode->Parent = Node;
+					ChildNode->CostFromStart = NewCost;
+					ChildNode->EstToGoal = Graph->LeastCostEstimate(ChildNode->State, EndState),
+						ChildNode->CalcTotalCost();
+
+					MPASSERT(!ChildNode->bInOpen && !ChildNode->bInClosed);
+					Open.Push(ChildNode);
 				}
 			}
 		}					
 	}
-	#ifdef DEBUG_PATH
+#ifdef DEBUG_PATH
 	DumpStats();
-	#endif
-	if ( PathCache ) {
+#endif
+	
+	if (PathCache)
+	{
 		// Could add a bunch more with a little tracking.
-		PathCache->AddNoSolution( EndState, &StartState, 1 );
+		PathCache->AddNoSolution(EndState, &StartState, 1);
 	}
-	return NO_SOLUTION;		
+
+	return NO_SOLUTION;
 }	
 
 
