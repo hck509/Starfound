@@ -52,6 +52,11 @@ void UStarfoundMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 
 		GetOwner()->SetActorLocation(NewLocation);
 		GetOwner()->SetActorRotation(NewRotation);
+
+		if (FollowingPath.Num() == 1)
+		{
+			FollowingPath.Empty();
+		}
 	}
 }
 
