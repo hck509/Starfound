@@ -8,8 +8,8 @@
 #include "StarfoundPawn.h"
 #include "StarfoundPlayerController.generated.h"
 
-UENUM()
-enum class EToolType
+UENUM(BlueprintType)
+enum class EToolType : uint8
 {
 	None,
 	Construct,
@@ -42,6 +42,12 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void DestructBlock();
+
+	UFUNCTION(BlueprintCallable)
+	EToolType GetActiveToolType() const { return ActiveToolType; }
+
+	UFUNCTION(BlueprintCallable)
+	TSubclassOf<ABlockActor> GetCreatingBlockClass() const { return CreatingBlockClass; }
 
 private:
 

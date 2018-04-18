@@ -1072,11 +1072,11 @@ int FMicroPather::Solve(void* StartState, void* EndState, TArray<void*>* Path, f
 				}
 
 				FPathNode* ChildNode = TempNodeCosts[i].Node;
-				float NewCost = Node->CostFromStart + TempNodeCosts[i].Cost;
-
 				FPathNode* inOpen   = ChildNode->bInOpen ? ChildNode : 0;
 				FPathNode* inClosed = ChildNode->bInClosed ? ChildNode : 0;
 				FPathNode* inEither = (FPathNode*)(((MP_UPTR)inOpen) | ((MP_UPTR)inClosed));
+
+				const float NewCost = Node->CostFromStart + TempNodeCosts[i].Cost;
 
 				MPASSERT(inEither != Node);
 				MPASSERT(!(inOpen && inClosed));
