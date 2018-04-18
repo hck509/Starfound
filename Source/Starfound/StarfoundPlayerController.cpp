@@ -196,16 +196,16 @@ bool AStarfoundPlayerController::InputKey(FKey Key, EInputEvent EventType, float
 		}
 		else 
 		{
-			if (SelectedPawn)
+			const bool bPicked = TrySelectPawnOnCursorLocation();
+			if (bPicked)
 			{
-				MoveToCursorLocation();
 				return true;
 			}
 			else
 			{
-				const bool bPicked = TrySelectPawnOnCursorLocation();
-				if (bPicked)
+				if (SelectedPawn)
 				{
+					MoveToCursorLocation();
 					return true;
 				}
 			}
