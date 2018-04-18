@@ -27,4 +27,8 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	class AStarfoundAIController* GetAIController() const;
+	class UStarfoundMovementComponent* GetStarfoundMovementController() const;
+
+private:
+	UStarfoundMovementComponent* MovementComponent;
 };

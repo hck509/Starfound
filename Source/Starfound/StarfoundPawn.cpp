@@ -1,7 +1,6 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "StarfoundPawn.h"
 #include "StarfoundAIController.h"
+#include "StarfoundMovementComponent.h"
 
 // Sets default values
 AStarfoundPawn::AStarfoundPawn()
@@ -10,6 +9,8 @@ AStarfoundPawn::AStarfoundPawn()
 	PrimaryActorTick.bCanEverTick = true;
 
 	AIControllerClass = AStarfoundAIController::StaticClass();
+
+	MovementComponent = CreateDefaultSubobject<UStarfoundMovementComponent>("StarfoundMovement");
 }
 
 // Called when the game starts or when spawned
@@ -38,3 +39,7 @@ class AStarfoundAIController* AStarfoundPawn::GetAIController() const
 	return Cast<AStarfoundAIController>(GetController());
 }
 
+class UStarfoundMovementComponent* AStarfoundPawn::GetStarfoundMovementController() const
+{
+	return MovementComponent;
+}

@@ -22,10 +22,4 @@ public:
 	void MoveToLocation(const FVector& TargetLocation);
 
 private:
-
-	/**
-	 * Path Following
-	 */
-	TArray<FVector2D> FollowingPath;
-	float PathFollowingDistance;
 };
