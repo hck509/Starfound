@@ -13,11 +13,9 @@ class STARFOUND_API UStarfoundMovementComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:	
-	
 	UStarfoundMovementComponent();
 
 protected:
-	
 	virtual void BeginPlay() override;
 
 public:	
@@ -26,9 +24,18 @@ public:
 
 	virtual void FollowPath(const TArray<FVector2D>& InFollowingPath);
 
+	UFUNCTION(BlueprintCallable)
+	float GetSpeed() const;
+
+	UFUNCTION(BlueprintCallable)
+	float GetMaxSpeed() const { return MaxSpeed; }
+
 private:
 	/**
 	 * Path Following
 	 */
 	TArray<FVector2D> FollowingPath;
+
+	UPROPERTY()
+	float MaxSpeed;
 };

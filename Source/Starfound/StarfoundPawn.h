@@ -26,7 +26,10 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UFUNCTION(BlueprintCallable)
 	class AStarfoundAIController* GetAIController() const;
+
+	UFUNCTION(BlueprintCallable)
 	class UStarfoundMovementComponent* GetStarfoundMovementController() const;
 
 private:

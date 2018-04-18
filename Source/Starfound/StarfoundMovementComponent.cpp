@@ -6,6 +6,8 @@
 UStarfoundMovementComponent::UStarfoundMovementComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
+
+	MaxSpeed = 100;
 }
 
 void UStarfoundMovementComponent::BeginPlay()
@@ -20,7 +22,7 @@ void UStarfoundMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 
 	if (FollowingPath.Num() > 1)
 	{
-		const float MoveSpeed = 100;
+		const float MoveSpeed = MaxSpeed;
 		const float MoveDistance = DeltaTime * MoveSpeed;
 
 		float MoveDistanceLeft = MoveDistance;
@@ -41,12 +43,30 @@ void UStarfoundMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 			}
 		}
 
-		GetOwner()->SetActorLocation(FVector(0, FollowingPath[0].X, FollowingPath[0].Y));
+		const FVector OldLocation = GetOwner()->GetActorLocation();
+		const FRotator OldRotation = GetOwner()->GetActorRotation();
+		const FVector NewLocation = FVector(0, FollowingPath[0].X, FollowingPath[0].Y);
+		const FVector Movement = NewLocation - OldLocation;
+		const FRotator TargetRotation = (Movement.Y > 0) ? FRotator(0, 0, 0) : FRotator(0, 180, 0);
+		const FRotator NewRotation = FMath::Lerp(OldRotation, TargetRotation, FMath::Clamp(DeltaTime * 10, 0.01f, 0.1f));
+
+		GetOwner()->SetActorLocation(NewLocation);
+		GetOwner()->SetActorRotation(NewRotation);
 	}
 }
 
 void UStarfoundMovementComponent::FollowPath(const TArray<FVector2D>& InFollowingPath)
 {
 	FollowingPath = InFollowingPath;
+}
+
+float UStarfoundMovementComponent::GetSpeed() const
+{
+	if (FollowingPath.Num() > 0)
+	{
+		return MaxSpeed;
+	}
+
+	return 0;
 }
 
