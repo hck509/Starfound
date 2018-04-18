@@ -225,9 +225,9 @@ FPathNodePool::FPathNodePool(unsigned InNumNodesPerBlock, unsigned _typicalAdjac
 {
 	FreeMemSentinel.InitSentinel();
 
-	CacheCap = NumNodesPerBlock * _typicalAdjacent;
-	CacheSize = 0;
-	Cache = (FNodeCost*)malloc(CacheCap * sizeof(FNodeCost));
+	NeighborCostsCapacity = NumNodesPerBlock * _typicalAdjacent;
+	NeighborCostsCacheSize = 0;
+	NeighborCostsCache = (FNodeCost*)malloc(NeighborCostsCapacity * sizeof(FNodeCost));
 
 	// Want the behavior that if the actual number of states is specified, the cache 
 	// will be at least that big.
@@ -249,7 +249,7 @@ FPathNodePool::~FPathNodePool()
 {
 	Clear();
 	free(FirstBlock);
-	free(Cache);
+	free(NeighborCostsCache);
 	free(HashTable);
 #ifdef TRACK_COLLISION
 	printf("Total collide=%d HashSize=%d HashShift=%d\n", NumHashCollision, HashSize(), HashShift);
@@ -261,15 +261,15 @@ bool FPathNodePool::PushCache(const TArray<FNodeCost>& Nodes, int32* OutStartInd
 {
 	*OutStartIndex = -1;
 	
-	if (Nodes.Num() + CacheSize <= CacheCap)
+	if (Nodes.Num() + NeighborCostsCacheSize <= NeighborCostsCapacity)
 	{
 		for (int32 i = 0; i < Nodes.Num(); ++i)
 		{
-			Cache[i + CacheSize] = Nodes[i];
+			NeighborCostsCache[i + NeighborCostsCacheSize] = Nodes[i];
 		}
 
-		*OutStartIndex = CacheSize;
-		CacheSize += Nodes.Num();
+		*OutStartIndex = NeighborCostsCacheSize;
+		NeighborCostsCacheSize += Nodes.Num();
 
 		return true;
 	}
@@ -280,13 +280,13 @@ bool FPathNodePool::PushCache(const TArray<FNodeCost>& Nodes, int32* OutStartInd
 
 void FPathNodePool::GetCache(int32 CacheIndex, int32 NumNodeCosts, TArray<FNodeCost>& OutNodeCosts)
 {
-	MPASSERT(CacheIndex >= 0 && CacheIndex < CacheCap);
+	MPASSERT(CacheIndex >= 0 && CacheIndex < NeighborCostsCapacity);
 	MPASSERT(NumNodeCosts > 0);
-	MPASSERT(CacheIndex + NumNodeCosts <= CacheCap);
+	MPASSERT(CacheIndex + NumNodeCosts <= NeighborCostsCapacity);
 
 	OutNodeCosts.SetNum(NumNodeCosts);
 
-	memcpy(OutNodeCosts.GetData(), &Cache[CacheIndex], sizeof(FNodeCost) * NumNodeCosts);
+	memcpy(OutNodeCosts.GetData(), &NeighborCostsCache[CacheIndex], sizeof(FNodeCost) * NumNodeCosts);
 }
 
 
@@ -336,7 +336,7 @@ void FPathNodePool::Clear()
 
 	NumAvailableNodesOnLastBlock = NumNodesPerBlock;
 	NumTotalAllocatedNodes = 0;
-	CacheSize = 0;
+	NeighborCostsCacheSize = 0;
 }
 
 
@@ -536,6 +536,7 @@ void FPathNode::Clear()
 	memset(this, 0, sizeof(FPathNode));
 	NumAdjacent = -1;
 	CacheIndex = -1;
+	CacheFrame = 0;
 }
 
 void MicroPanther::FPathNode::InitSentinel()
@@ -704,7 +705,7 @@ void FMicroPather::GetNodeNeighbors(FPathNode* Node, TArray<FNodeCost>* OutNodeC
 		// it has no neighbors.
 		OutNodeCosts->SetNum(0);
 	}
-	else if (Node->CacheIndex < 0)
+	else if (Node->CacheIndex < 0 || Node->CacheFrame != Frame)
 	{
 		// Not in the cache. Either the first time or just didn't fit. We don't know
 		// the number of neighbors and need to call back to the client.
@@ -800,6 +801,11 @@ void FPathNodePool::AllStates(uint32 frame, TArray<void*>* stateVec)
     	}    
 	}           
 }   
+
+void MicroPanther::FPathNodePool::ClearNeighborCache()
+{
+	NeighborCostsCacheSize = 0;
+}
 
 FPathCache::FPathCache(int NumItemsToAllocate)
 {
@@ -1025,7 +1031,7 @@ int FMicroPather::Solve(void* StartState, void* EndState, TArray<void*>* Path, f
 #endif
 	}
 
-	++Frame;
+	IncreaseFrame();
 
 	FOpenQueue Open(Graph);
 	FClosedSet Closed(Graph);
@@ -1226,6 +1232,12 @@ int FMicroPather::SolveForNearStates( void* startState, TArray< FStateCost >* ne
 	return SOLVED;
 }
 
+void MicroPanther::FMicroPather::IncreaseFrame()
+{
+	++Frame;
+
+	PathNodePool.ClearNeighborCache();
+}
 
 
 

@@ -157,6 +157,7 @@ namespace MicroPanther
 
 		int NumAdjacent;		// -1  is unknown & needs to be queried
 		int CacheIndex;			// position in cache
+		uint32 CacheFrame;
 
 		FPathNode* Child[2];		// Binary search in the hash table. [left, right]
 		FPathNode* Next, *Prev;	// used by open queue
@@ -194,6 +195,8 @@ namespace MicroPanther
 
 		// Free all the memory except the first block. Resets all memory.
 		void Clear();
+
+		void ClearNeighborCache();
 
 		// Essentially:
 		// pNode = Find();
@@ -246,9 +249,9 @@ namespace MicroPanther
 		FBlock* FirstBlock;
 		FBlock* Blocks;
 
-		FNodeCost* Cache;
-		int32 CacheCap;
-		int32 CacheSize;
+		FNodeCost* NeighborCostsCache;
+		int32 NeighborCostsCapacity;
+		int32 NeighborCostsCacheSize;
 
 		FPathNode FreeMemSentinel;
 
@@ -422,8 +425,9 @@ namespace MicroPanther
 		  void operator=(const FMicroPather); // undefined and unsupported
 
 		  void GoalReached(FPathNode* node, void* start, void* end, TArray<void*> *path);
-
 		  void GetNodeNeighbors(FPathNode* node, TArray<FNodeCost>* neighborNode);
+
+		  void IncreaseFrame();
 
 #ifdef DEBUG
 		  //void DumpStats();
@@ -441,7 +445,7 @@ namespace MicroPanther
 		  FGraph* Graph;
 
 		  // incremented with every solve, used to determine if cached data needs to be refreshed
-		  unsigned Frame;
+		  uint32 Frame;
 		  FPathCache* PathCache;
 	};
 
