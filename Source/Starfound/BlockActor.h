@@ -69,6 +69,14 @@ public:
 	int32 WorldSpaceToOriginSpaceGridX(float X) const { return FMath::RoundToInt(X / GridCellSize) - GetOriginX(); }
 	int32 WorldSpaceToOriginSpaceGridY(float Y) const { return FMath::RoundToInt(Y / GridCellSize) - GetOriginY(); }
 
+	FIntPoint WorldSpaceToWorldSpaceGrid(const FVector& Location) const
+	{
+		const int32 X = FMath::RoundToInt(Location.Y / GridCellSize);
+		const int32 Y = FMath::RoundToInt(Location.Z / GridCellSize);
+
+		return FIntPoint(X, Y);
+	}
+
 	FIntPoint WorldSpaceToOriginSpaceGrid(const FVector& Location) const
 	{
 		return FIntPoint(WorldSpaceToOriginSpaceGridX(Location.Y), WorldSpaceToOriginSpaceGridY(Location.Z));

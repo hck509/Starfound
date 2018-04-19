@@ -31,6 +31,9 @@ public:
 	float GetMaxSpeed() const { return MaxSpeed; }
 
 private:
+	void TickFreefall(float DeltaTime);
+	bool IsFreefalling() const;
+
 	/**
 	 * Path Following
 	 */
@@ -38,4 +41,7 @@ private:
 
 	UPROPERTY()
 	float MaxSpeed;
+
+	UPROPERTY()
+	float FallingSpeed;
 };
