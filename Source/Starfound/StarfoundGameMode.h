@@ -31,7 +31,12 @@ struct FStarfoundJob
 	UPROPERTY()
 	TSubclassOf<ABlockActor> ConstructBlockClass;
 
+	// Destruct
+	UPROPERTY()
+	TWeakObjectPtr<class ABlockActor> DestructBlockActor;
+
 	void InitConstruct(const FIntPoint& InLocation, const TSubclassOf<ABlockActor>& InConstructBlockClass);
+	void InitDestruct(TWeakObjectPtr<class ABlockActor> Actor);
 };
 
 UCLASS(BlueprintType)
@@ -46,13 +51,18 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void AddJob(const FStarfoundJob& Job);
 
+	UFUNCTION(BlueprintCallable)
 	void AssignJob(AStarfoundPawn* Pawn);
+
+	void AssignAnotherJob(AStarfoundPawn* Pawn);
 
 	UFUNCTION(BlueprintCallable)
 	bool GetAssignedJob(const AStarfoundPawn* Pawn, FStarfoundJob& OutJob);
 
 	UFUNCTION(BlueprintCallable)
 	void PopAssignedJob(const AStarfoundPawn* Pawn);
+
+	void DebugDraw() const;
 
 private:
 	TArray<FStarfoundJob> JobQueue;
@@ -71,6 +81,7 @@ public:
 
 private:
 	void HandleConstruct(const FStarfoundJob& Job);
+	void HandleDestruct(const FStarfoundJob& Job);
 };
 
 

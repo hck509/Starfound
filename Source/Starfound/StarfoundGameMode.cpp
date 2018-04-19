@@ -37,6 +37,7 @@ void AStarfoundGameMode::Tick(float DeltaTime)
 
 	BlockActorScene->DebugDraw();
 	Navigation->DebugDraw();
+	JobQueue->DebugDraw();
 }
 
 void UStarfoundJobQueue::AddJob(const FStarfoundJob& Job)
@@ -57,9 +58,29 @@ void UStarfoundJobQueue::AssignJob(AStarfoundPawn* Pawn)
 		return;
 	}
 
-	FStarfoundJob Job = JobQueue.Pop();
+	FStarfoundJob Job = JobQueue[0];
+	JobQueue.RemoveAt(0);
 
 	AssignedJobs.Add(Pawn, Job);
+}
+
+void UStarfoundJobQueue::AssignAnotherJob(AStarfoundPawn* Pawn)
+{
+	const FStarfoundJob* OldJob = AssignedJobs.Find(Pawn);
+	
+	if (!OldJob)
+	{
+		AssignJob(Pawn);
+		return;
+	}
+
+	FStarfoundJob OldJobCopy = *OldJob;
+
+	AssignedJobs.Remove(Pawn);
+
+	AssignJob(Pawn);
+
+	JobQueue.Add(OldJobCopy);
 }
 
 bool UStarfoundJobQueue::GetAssignedJob(const AStarfoundPawn* Pawn, FStarfoundJob& OutJob)
@@ -85,11 +106,49 @@ void UStarfoundJobQueue::PopAssignedJob(const AStarfoundPawn* Pawn)
 	AssignedJobs.Remove(Pawn);
 }
 
+void UStarfoundJobQueue::DebugDraw() const
+{
+	UBlockActorScene* BlockScene = GetBlockActorScene(GetWorld());
+
+	if (!BlockScene)
+	{
+		return;
+	}
+
+	for (const FStarfoundJob& Job : JobQueue)
+	{
+		BlockScene->DebugDrawBoxAt(Job.Location, FColor::White);
+	}
+
+	for (auto&& Iter : AssignedJobs)
+	{
+		AStarfoundPawn* Pawn = Iter.Key;
+		const FStarfoundJob& Job = Iter.Value;
+
+		BlockScene->DebugDrawBoxAt(Job.Location, FColor::Green);
+	}
+}
+
 void FStarfoundJob::InitConstruct(const FIntPoint& InLocation, const TSubclassOf<ABlockActor>& InConstructBlockClass)
 {
 	JobType = EStarfoundJobType::Construct;
 	Location = InLocation;
 	ConstructBlockClass = InConstructBlockClass;
+}
+
+void FStarfoundJob::InitDestruct(TWeakObjectPtr<class ABlockActor> Actor)
+{
+	JobType = EStarfoundJobType::Destruct;
+	DestructBlockActor = Actor;
+
+	UBlockActorScene* BlockScene = GetBlockActorScene(Actor->GetWorld());
+
+	if (!BlockScene)
+	{
+		return;
+	}
+
+	Location = BlockScene->WorldSpaceToOriginSpaceGrid(Actor->GetActorLocation());
 }
 
 void UStarfoundJobExecutor::ExecuteJob(const FStarfoundJob& Job)
@@ -101,6 +160,7 @@ void UStarfoundJobExecutor::ExecuteJob(const FStarfoundJob& Job)
 		break;
 
 	case EStarfoundJobType::Destruct:
+		HandleDestruct(Job);
 		break;
 
 	default:
@@ -110,14 +170,14 @@ void UStarfoundJobExecutor::ExecuteJob(const FStarfoundJob& Job)
 
 void UStarfoundJobExecutor::HandleConstruct(const FStarfoundJob& Job)
 {
-	UBlockActorScene* BlockScene = GetWorld() ? Cast<UBlockActorScene>(GetWorld()->GetWorldSettings()->GetAssetUserDataOfClass(UBlockActorScene::StaticClass())) : nullptr;
+	UBlockActorScene* BlockScene = GetBlockActorScene(GetWorld());
 
 	if (!BlockScene)
 	{
 		return;
 	}
 
-	const FVector2D Location2D = BlockScene->OriginSpaceGridToWorldSpace(Job.Location);
+	const FVector2D Location2D = BlockScene->OriginSpaceGridToWorldSpace2D(Job.Location);
 
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -125,4 +185,12 @@ void UStarfoundJobExecutor::HandleConstruct(const FStarfoundJob& Job)
 	ABlockActor* NewBlockActor = GetWorld()->SpawnActor<ABlockActor>(
 		Job.ConstructBlockClass, 
 		FTransform(FVector(0, Location2D.X, Location2D.Y)), SpawnParameters);
+}
+
+void UStarfoundJobExecutor::HandleDestruct(const FStarfoundJob& Job)
+{
+	if (Job.DestructBlockActor.IsValid())
+	{
+		Job.DestructBlockActor->Destroy();
+	}
 }

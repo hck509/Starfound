@@ -36,7 +36,7 @@ void AStarfoundPlayerController::ConstructBlock()
 		return;
 	}
 
-	UBlockActorScene* BlockScene = GetWorld() ? Cast<UBlockActorScene>(GetWorld()->GetWorldSettings()->GetAssetUserDataOfClass(UBlockActorScene::StaticClass())) : nullptr;
+	UBlockActorScene* BlockScene = GetBlockActorScene(GetWorld());
 
 	if (!BlockScene)
 	{
@@ -69,12 +69,24 @@ void AStarfoundPlayerController::DestructBlock()
 		return;
 	}
 
+	UBlockActorScene* BlockScene = GetBlockActorScene(GetWorld());
+
+	if (!BlockScene)
+	{
+		return;
+	}
+
 	FHitResult HitResult;
 	bool bHitFound = GetHitResultUnderCursorByChannel(UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_WorldStatic), true, HitResult);
 
 	if (bHitFound && HitResult.Actor.IsValid() && HitResult.Actor->IsA(ABlockActor::StaticClass()))
 	{
-		HitResult.Actor->Destroy();
+		const FIntPoint GridLocation = BlockScene->WorldSpaceToOriginSpaceGrid(HitResult.Actor->GetActorLocation());
+
+		FStarfoundJob Job;
+		Job.InitDestruct(Cast<ABlockActor>(HitResult.Actor.Get()));
+
+		Cast<AStarfoundGameMode>(GetWorld()->GetAuthGameMode())->GetJobQueue()->AddJob(Job);
 	}
 }
 

@@ -74,12 +74,19 @@ public:
 		return FIntPoint(WorldSpaceToOriginSpaceGridX(Location.Y), WorldSpaceToOriginSpaceGridY(Location.Z));
 	}
 
-	FVector2D OriginSpaceGridToWorldSpace(const FIntPoint& Point) const
+	FVector2D OriginSpaceGridToWorldSpace2D(const FIntPoint& Point) const
 	{
 		return FVector2D((Point.X + GetOriginX()) * GridCellSize, (Point.Y + GetOriginY()) * GridCellSize);
 	}
 
+	FVector OriginSpaceGridToWorldSpace(const FIntPoint& Point) const
+	{
+		return FVector(0, (Point.X + GetOriginX()) * GridCellSize, (Point.Y + GetOriginY()) * GridCellSize);
+	}
+
 	ABlockActor* GetBlock(int32 X, int32 Y) const;
+
+	void DebugDrawBoxAt(const FIntPoint& OriginSpaceGridLocation, const FColor& Color) const;
 
 	void DebugDraw() const;
 
@@ -94,3 +101,5 @@ private:
 	UPROPERTY()
 	TArray<ABlockActor*> BlockActors;
 };
+
+UBlockActorScene* GetBlockActorScene(UWorld* World);

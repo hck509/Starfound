@@ -19,7 +19,7 @@ public:
 
 	virtual void Tick(float DeltaSeconds);
 
-	void MoveToLocation(const FVector& TargetLocation);
+	bool MoveToLocation(const FVector& TargetLocation);
 
 private:
 	void AssignJobIfNeeded();

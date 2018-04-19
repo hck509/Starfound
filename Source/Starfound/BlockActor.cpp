@@ -19,7 +19,8 @@ void ABlockActor::BeginPlay()
 	
 	if (!bTemporal)
 	{
-		UBlockActorScene* BlockScene = Cast<UBlockActorScene>(GetWorld()->GetWorldSettings()->GetAssetUserDataOfClass(UBlockActorScene::StaticClass()));
+		UBlockActorScene* BlockScene = GetBlockActorScene(GetWorld());
+
 		if (ensure(BlockScene))
 		{
 			BlockScene->RegisterBlockActor(this);
@@ -43,7 +44,8 @@ void ABlockActor::PostUnregisterAllComponents()
 		GetRootComponent()->TransformUpdated.RemoveAll(this);
 	}
 
-	UBlockActorScene* BlockScene = GetWorld() ? Cast<UBlockActorScene>(GetWorld()->GetWorldSettings()->GetAssetUserDataOfClass(UBlockActorScene::StaticClass())) : nullptr;
+	UBlockActorScene* BlockScene = GetBlockActorScene(GetWorld());
+
 	if (BlockScene)
 	{
 		BlockScene->UnRegisterBlockActor(this);
@@ -54,7 +56,8 @@ void ABlockActor::TransformUpdated(USceneComponent* RootComponent, EUpdateTransf
 {
 	if (!bTemporal)
 	{
-		UBlockActorScene* BlockScene = Cast<UBlockActorScene>(GetWorld()->GetWorldSettings()->GetAssetUserDataOfClass(UBlockActorScene::StaticClass()));
+		UBlockActorScene* BlockScene = GetBlockActorScene(GetWorld());
+
 		if (ensure(BlockScene))
 		{
 			BlockScene->RegisterBlockActor(this);
@@ -188,6 +191,13 @@ ABlockActor* UBlockActorScene::GetBlock(int32 X, int32 Y) const
 	return BlockActors[Index];
 }
 
+void UBlockActorScene::DebugDrawBoxAt(const FIntPoint& OriginSpaceGridLocation, const FColor& Color) const
+{
+	FVector Location = OriginSpaceGridToWorldSpace(OriginSpaceGridLocation);
+
+	DrawDebugBox(GetWorld(), Location, FVector(50, 50, 50), Color);
+}
+
 void UBlockActorScene::DebugDraw() const
 {
 	int32 NumActiveBlocks = 0;
@@ -203,4 +213,11 @@ void UBlockActorScene::DebugDraw() const
 
 	GEngine->AddOnScreenDebugMessage((uint64)(this + 0), 0, FColor::White,
 		FString::Printf(TEXT("Active Blocks: %4d"), NumActiveBlocks));
+}
+
+UBlockActorScene* GetBlockActorScene(UWorld* World)
+{
+	UBlockActorScene* BlockScene = World ? Cast<UBlockActorScene>(World->GetWorldSettings()->GetAssetUserDataOfClass(UBlockActorScene::StaticClass())) : nullptr;
+
+	return BlockScene;
 }

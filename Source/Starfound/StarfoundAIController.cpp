@@ -18,12 +18,12 @@ void AStarfoundAIController::Tick(float DeltaSeconds)
 	ExecuteJobIfInRange();
 }
 
-void AStarfoundAIController::MoveToLocation(const FVector& TargetLocation)
+bool AStarfoundAIController::MoveToLocation(const FVector& TargetLocation)
 {
 	AStarfoundGameMode* GameMode = Cast<AStarfoundGameMode>(GetWorld()->GetAuthGameMode());
 	if (!GameMode)
 	{
-		return;
+		return false;
 	}
 
 	const FVector PawnLocation = GetPawn()->GetActorLocation();
@@ -48,6 +48,8 @@ void AStarfoundAIController::MoveToLocation(const FVector& TargetLocation)
 			Pawn->GetStarfoundMovementController()->FollowPath(PathPoints);
 		}
 	}
+
+	return bPathFound;
 }
 
 void AStarfoundAIController::AssignJobIfNeeded()
@@ -97,21 +99,26 @@ void AStarfoundAIController::MoveToJobLocation()
 		return;
 	}
 
-	UBlockActorScene* BlockScene = GetWorld() ? Cast<UBlockActorScene>(GetWorld()->GetWorldSettings()->GetAssetUserDataOfClass(UBlockActorScene::StaticClass())) : nullptr;
+	UBlockActorScene* BlockScene = GetBlockActorScene(GetWorld());
 
 	if (!BlockScene)
 	{
 		return;
 	}
 
-	const FVector2D JobLocation2D = BlockScene->OriginSpaceGridToWorldSpace(Job.Location);
+	const FVector2D JobLocation2D = BlockScene->OriginSpaceGridToWorldSpace2D(Job.Location);
 	const FVector JobLocation(0, JobLocation2D.X, JobLocation2D.Y);
 
 	const float Distance = (JobLocation - Pawn->GetActorLocation()).Size();
 
 	if (Distance > 100)
 	{
-		MoveToLocation(JobLocation);
+		const bool bPathFound = MoveToLocation(JobLocation);
+
+		if (!bPathFound)
+		{
+			GameMode->GetJobQueue()->AssignAnotherJob(Pawn);
+		}
 	}
 }
 
@@ -138,14 +145,14 @@ void AStarfoundAIController::ExecuteJobIfInRange()
 		return;
 	}
 
-	UBlockActorScene* BlockScene = GetWorld() ? Cast<UBlockActorScene>(GetWorld()->GetWorldSettings()->GetAssetUserDataOfClass(UBlockActorScene::StaticClass())) : nullptr;
+	UBlockActorScene* BlockScene = GetBlockActorScene(GetWorld());
 
 	if (!BlockScene)
 	{
 		return;
 	}
 
-	const FVector2D JobLocation2D = BlockScene->OriginSpaceGridToWorldSpace(Job.Location);
+	const FVector2D JobLocation2D = BlockScene->OriginSpaceGridToWorldSpace2D(Job.Location);
 	const FVector JobLocation(0, JobLocation2D.X, JobLocation2D.Y);
 
 	const float Distance = (JobLocation - Pawn->GetActorLocation()).Size();

@@ -20,7 +20,7 @@ void ANavigation::Tick(float DeltaSeconds)
 
 void ANavigation::UpdateGraph()
 {
-	UBlockActorScene* BlockScene = GetWorld() ? Cast<UBlockActorScene>(GetWorld()->GetWorldSettings()->GetAssetUserDataOfClass(UBlockActorScene::StaticClass())) : nullptr;
+	UBlockActorScene* BlockScene = GetBlockActorScene(GetWorld());
 	if (BlockScene)
 	{
 		if (Graph->GetGridCountX() != BlockScene->GetNumGridX() ||
@@ -61,7 +61,8 @@ void ANavigation::UpdateGraph()
 
 bool ANavigation::FindPath(const FVector& StartLocation, const FVector& TargetLocation, TArray<FVector2D>& OutPath)
 {
-	UBlockActorScene* BlockScene = GetWorld() ? Cast<UBlockActorScene>(GetWorld()->GetWorldSettings()->GetAssetUserDataOfClass(UBlockActorScene::StaticClass())) : nullptr;
+	UBlockActorScene* BlockScene = GetBlockActorScene(GetWorld());
+
 	if (!ensure(BlockScene))
 	{
 		return false;
@@ -86,7 +87,7 @@ bool ANavigation::FindPath(const FVector& StartLocation, const FVector& TargetLo
 		for (int32 i = 0; i < Path.Num(); ++i)
 		{
 			FIntPoint Point = Graph->StateToVec2(Path[i]);
-			FVector2D WorldSpaceLocation = BlockScene->OriginSpaceGridToWorldSpace(Point);
+			FVector2D WorldSpaceLocation = BlockScene->OriginSpaceGridToWorldSpace2D(Point);
 
 			OutPath.Add(WorldSpaceLocation);
 		}
@@ -99,7 +100,7 @@ bool ANavigation::FindPath(const FVector& StartLocation, const FVector& TargetLo
 
 void ANavigation::DebugDraw() const
 {
-	UBlockActorScene* BlockScene = GetWorld() ? Cast<UBlockActorScene>(GetWorld()->GetWorldSettings()->GetAssetUserDataOfClass(UBlockActorScene::StaticClass())) : nullptr;
+	UBlockActorScene* BlockScene = GetBlockActorScene(GetWorld());
 	if (!BlockScene)
 	{
 		return;
