@@ -36,10 +36,19 @@ void AStarfoundPlayerController::ConstructBlock()
 		return;
 	}
 
-	FActorSpawnParameters SpawnParameters;
-	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	UBlockActorScene* BlockScene = GetWorld() ? Cast<UBlockActorScene>(GetWorld()->GetWorldSettings()->GetAssetUserDataOfClass(UBlockActorScene::StaticClass())) : nullptr;
 
-	ABlockActor* NewBlockActor = GetWorld()->SpawnActor<ABlockActor>(CreatingBlockClass, CreatingBlockActor->GetActorTransform(), SpawnParameters);
+	if (!BlockScene)
+	{
+		return;
+	}
+
+	const FIntPoint GridLocation = BlockScene->WorldSpaceToOriginSpaceGrid(CreatingBlockActor->GetActorLocation());
+
+	FStarfoundJob Job;
+	Job.InitConstruct(GridLocation, CreatingBlockClass);
+
+	Cast<AStarfoundGameMode>(GetWorld()->GetAuthGameMode())->GetJobQueue()->AddJob(Job);
 }
 
 void AStarfoundPlayerController::StartDestruct()

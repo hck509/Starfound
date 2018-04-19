@@ -1,5 +1,3 @@
-// Copyright 1998-2017 Epic Games, Inc. All Rights Reserved.
-
 #include "StarfoundGameMode.h"
 #include "StarfoundCharacter.h"
 #include "UObject/ConstructorHelpers.h"
@@ -28,6 +26,9 @@ void AStarfoundGameMode::StartPlay()
 	BlockGenerator->GenerateRandomBlockWorld(GetWorld(), BlockClasses);
 
 	Navigation = GetWorld()->SpawnActor<ANavigation>();
+
+	JobQueue = NewObject<UStarfoundJobQueue>();
+	JobExecutor = NewObject<UStarfoundJobExecutor>();
 }
 
 void AStarfoundGameMode::Tick(float DeltaTime)
@@ -36,4 +37,71 @@ void AStarfoundGameMode::Tick(float DeltaTime)
 
 	BlockActorScene->DebugDraw();
 	Navigation->DebugDraw();
+}
+
+void UStarfoundJobQueue::AddJob(const FStarfoundJob& Job)
+{
+	JobQueue.Add(Job);
+}
+
+void UStarfoundJobQueue::AssignJob(AStarfoundPawn* Pawn)
+{
+	if (AssignedJobs.Find(Pawn))
+	{
+		ensure(0);
+		return;
+	}
+
+	if (JobQueue.Num() == 0)
+	{
+		return;
+	}
+
+	FStarfoundJob Job = JobQueue.Pop();
+
+	AssignedJobs.Add(Pawn, Job);
+}
+
+bool UStarfoundJobQueue::GetAssignedJob(const AStarfoundPawn* Pawn, FStarfoundJob& OutJob)
+{
+	if (!Pawn)
+	{
+		return false;
+	}
+
+	const FStarfoundJob* Job = AssignedJobs.Find(Pawn);
+
+	if (Job)
+	{
+		OutJob = *Job;
+		return true;
+	}
+
+	return false;
+}
+
+void FStarfoundJob::InitConstruct(const FIntPoint& InLocation, const TSubclassOf<ABlockActor>& InConstructBlockClass)
+{
+	JobType = EStarfoundJobType::Construct;
+	Location = InLocation;
+	ConstructBlockClass = InConstructBlockClass;
+}
+
+void UStarfoundJobExecutor::HandleConstruct(const FStarfoundJob& Job)
+{
+	UBlockActorScene* BlockScene = GetWorld() ? Cast<UBlockActorScene>(GetWorld()->GetWorldSettings()->GetAssetUserDataOfClass(UBlockActorScene::StaticClass())) : nullptr;
+
+	if (!BlockScene)
+	{
+		return;
+	}
+
+	const FVector2D Location2D = BlockScene->OriginSpaceGridToWorldSpace(Job.Location);
+
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	ABlockActor* NewBlockActor = GetWorld()->SpawnActor<ABlockActor>(
+		Job.ConstructBlockClass, 
+		FTransform(FVector(0, Location2D.X, Location2D.Y)), SpawnParameters);
 }

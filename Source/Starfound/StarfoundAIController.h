@@ -22,4 +22,6 @@ public:
 	void MoveToLocation(const FVector& TargetLocation);
 
 private:
+	void AssignJobIfNeeded();
+	void MoveToJobLocation();
 };
