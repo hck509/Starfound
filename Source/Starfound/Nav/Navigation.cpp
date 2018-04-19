@@ -98,6 +98,27 @@ bool ANavigation::FindPath(const FVector& StartLocation, const FVector& TargetLo
 	return false;
 }
 
+bool ANavigation::IsValidLocation(const FVector& Location) const
+{
+	UBlockActorScene* BlockScene = GetBlockActorScene(GetWorld());
+
+	if (!ensure(BlockScene))
+	{
+		return false;
+	}
+
+	const FIntPoint GridLocation = BlockScene->WorldSpaceToOriginSpaceGrid(Location);
+
+	return IsValidGridLocation(GridLocation);
+}
+
+bool ANavigation::IsValidGridLocation(const FIntPoint& GridLocation) const
+{
+	const int32 GraphValue = Graph->GetHeight(GridLocation.X, GridLocation.Y);
+
+	return (GraphValue == 0);
+}
+
 void ANavigation::DebugDraw() const
 {
 	UBlockActorScene* BlockScene = GetBlockActorScene(GetWorld());

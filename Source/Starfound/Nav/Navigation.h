@@ -18,6 +18,9 @@ public:
 
 	bool FindPath(const FVector& StartLocation, const FVector& TargetLocation, TArray<FVector2D>& OutPath);
 
+	bool IsValidLocation(const FVector& Location) const;
+	bool IsValidGridLocation(const FIntPoint& GridLocation) const;
+
 	void DebugDraw() const;
 
 private:

@@ -4,6 +4,8 @@
 #include "StarfoundPawn.h"
 #include "DrawDebugHelpers.h"
 
+const static float JobReachDistance = 150;
+
 AStarfoundAIController::AStarfoundAIController()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -32,7 +34,7 @@ bool AStarfoundAIController::MoveToLocation(const FVector& TargetLocation)
 	const bool bPathFound = GameMode->GetNavigation()->FindPath(PawnLocation, TargetLocation, PathPoints);
 
 	//DrawDebugPoint(GetWorld(), PawnLocation + FVector(10, 0, 0), 40.0f, FColor::Blue, false, 5.0f);
-	//DrawDebugPoint(GetWorld(), TargetLocation + FVector(10, 0, 0), 40.0f, FColor::Blue, false, 5.0f);
+	DrawDebugPoint(GetWorld(), TargetLocation + FVector(10, 0, 0), 40.0f, FColor::Blue, false, 0.2f);
 
 	if (bPathFound)
 	{
@@ -110,14 +112,56 @@ void AStarfoundAIController::MoveToJobLocation()
 	const FVector JobLocation(0, JobLocation2D.X, JobLocation2D.Y);
 
 	const float Distance = (JobLocation - Pawn->GetActorLocation()).Size();
+	FVector TargetLocation;
+	bool bFoundValidTargetLocation = false;
 
-	if (Distance > 100)
+	if (Distance > JobReachDistance)
 	{
-		const bool bPathFound = MoveToLocation(JobLocation);
+		float TargetLocationMinDistance = 10E5;
+		
+		for (int32 X = -1; X <= 1; ++X)
+		{
+			bool bFoundValidNeighbor = false;
 
-		if (!bPathFound)
+			for (int32 Y = -1; Y <= 1; ++Y)
+			{
+				if (X == 0 && Y == 0)
+				{
+					continue;
+				}
+
+				bFoundValidNeighbor = GameMode->GetNavigation()->IsValidGridLocation(Job.Location + FIntPoint(X, Y));
+
+				if (bFoundValidNeighbor)
+				{
+					const FVector TargetLocationCandidate = BlockScene->OriginSpaceGridToWorldSpace(Job.Location + FIntPoint(X, Y));
+
+					TArray<FVector2D> PathPoints;
+					const bool bPathFound = GameMode->GetNavigation()->FindPath(Pawn->GetActorLocation(), TargetLocationCandidate, PathPoints);
+
+					if (bPathFound)
+					{
+						const float Distance = (Pawn->GetActorLocation() - TargetLocationCandidate).Size();
+
+						if (Distance < TargetLocationMinDistance)
+						{
+							TargetLocationMinDistance = Distance;
+							TargetLocation = TargetLocationCandidate;
+							bFoundValidTargetLocation = true;
+						}
+					}
+				}
+			}
+		}
+
+		if (!bFoundValidTargetLocation)
 		{
 			GameMode->GetJobQueue()->AssignAnotherJob(Pawn);
+		}
+		else
+		{
+			const bool bPathFound = MoveToLocation(TargetLocation);
+			ensure(bPathFound);
 		}
 	}
 }
@@ -157,7 +201,7 @@ void AStarfoundAIController::ExecuteJobIfInRange()
 
 	const float Distance = (JobLocation - Pawn->GetActorLocation()).Size();
 
-	if (Distance <= 100)
+	if (Distance <= JobReachDistance)
 	{
 		GameMode->GetJobExecutor()->ExecuteJob(Job);
 		GameMode->GetJobQueue()->PopAssignedJob(Pawn);
