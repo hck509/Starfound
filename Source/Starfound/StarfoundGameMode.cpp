@@ -16,7 +16,7 @@ AStarfoundGameMode::AStarfoundGameMode()
 
 void AStarfoundGameMode::StartPlay()
 {
-	BlockActorScene = NewObject<UBlockActorScene>();
+	BlockActorScene = NewObject<UBlockActorScene>(this);
 	GetWorld()->GetWorldSettings()->AddAssetUserData(BlockActorScene);
 	BlockActorScene->InitializeGrid(100.0f, 100, 100);
 
@@ -27,8 +27,8 @@ void AStarfoundGameMode::StartPlay()
 
 	Navigation = GetWorld()->SpawnActor<ANavigation>();
 
-	JobQueue = NewObject<UStarfoundJobQueue>();
-	JobExecutor = NewObject<UStarfoundJobExecutor>();
+	JobQueue = NewObject<UStarfoundJobQueue>(this);
+	JobExecutor = NewObject<UStarfoundJobExecutor>(this);
 }
 
 void AStarfoundGameMode::Tick(float DeltaTime)
@@ -80,11 +80,32 @@ bool UStarfoundJobQueue::GetAssignedJob(const AStarfoundPawn* Pawn, FStarfoundJo
 	return false;
 }
 
+void UStarfoundJobQueue::PopAssignedJob(const AStarfoundPawn* Pawn)
+{
+	AssignedJobs.Remove(Pawn);
+}
+
 void FStarfoundJob::InitConstruct(const FIntPoint& InLocation, const TSubclassOf<ABlockActor>& InConstructBlockClass)
 {
 	JobType = EStarfoundJobType::Construct;
 	Location = InLocation;
 	ConstructBlockClass = InConstructBlockClass;
+}
+
+void UStarfoundJobExecutor::ExecuteJob(const FStarfoundJob& Job)
+{
+	switch (Job.JobType)
+	{
+	case EStarfoundJobType::Construct:
+		HandleConstruct(Job);
+		break;
+
+	case EStarfoundJobType::Destruct:
+		break;
+
+	default:
+		ensure(0);
+	}
 }
 
 void UStarfoundJobExecutor::HandleConstruct(const FStarfoundJob& Job)

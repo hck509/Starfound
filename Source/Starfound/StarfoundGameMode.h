@@ -51,6 +51,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool GetAssignedJob(const AStarfoundPawn* Pawn, FStarfoundJob& OutJob);
 
+	UFUNCTION(BlueprintCallable)
+	void PopAssignedJob(const AStarfoundPawn* Pawn);
+
 private:
 	TArray<FStarfoundJob> JobQueue;
 
@@ -63,6 +66,8 @@ class UStarfoundJobExecutor : public UObject
 {
 public:
 	GENERATED_BODY()
+
+	void ExecuteJob(const FStarfoundJob& Job);
 
 private:
 	void HandleConstruct(const FStarfoundJob& Job);
@@ -85,6 +90,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	UStarfoundJobQueue* GetJobQueue() const { return JobQueue; }
+
+	UFUNCTION(BlueprintCallable)
+	UStarfoundJobExecutor* GetJobExecutor() const { return JobExecutor; }
 
 private:
 

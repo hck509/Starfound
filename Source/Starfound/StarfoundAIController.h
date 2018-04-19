@@ -24,4 +24,5 @@ public:
 private:
 	void AssignJobIfNeeded();
 	void MoveToJobLocation();
+	void ExecuteJobIfInRange();
 };

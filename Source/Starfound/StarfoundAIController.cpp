@@ -15,6 +15,7 @@ void AStarfoundAIController::Tick(float DeltaSeconds)
 
 	AssignJobIfNeeded();
 	MoveToJobLocation();
+	ExecuteJobIfInRange();
 }
 
 void AStarfoundAIController::MoveToLocation(const FVector& TargetLocation)
@@ -111,5 +112,47 @@ void AStarfoundAIController::MoveToJobLocation()
 	if (Distance > 100)
 	{
 		MoveToLocation(JobLocation);
+	}
+}
+
+void AStarfoundAIController::ExecuteJobIfInRange()
+{
+	AStarfoundPawn* Pawn = Cast<AStarfoundPawn>(GetPawn());
+
+	if (!Pawn)
+	{
+		return;
+	}
+
+	AStarfoundGameMode* GameMode = Cast<AStarfoundGameMode>(GetWorld()->GetAuthGameMode());
+	if (!GameMode)
+	{
+		return;
+	}
+
+	FStarfoundJob Job;
+	const bool bJobAssigned = GameMode->GetJobQueue()->GetAssignedJob(Pawn, Job);
+
+	if (!bJobAssigned)
+	{
+		return;
+	}
+
+	UBlockActorScene* BlockScene = GetWorld() ? Cast<UBlockActorScene>(GetWorld()->GetWorldSettings()->GetAssetUserDataOfClass(UBlockActorScene::StaticClass())) : nullptr;
+
+	if (!BlockScene)
+	{
+		return;
+	}
+
+	const FVector2D JobLocation2D = BlockScene->OriginSpaceGridToWorldSpace(Job.Location);
+	const FVector JobLocation(0, JobLocation2D.X, JobLocation2D.Y);
+
+	const float Distance = (JobLocation - Pawn->GetActorLocation()).Size();
+
+	if (Distance <= 100)
+	{
+		GameMode->GetJobExecutor()->ExecuteJob(Job);
+		GameMode->GetJobQueue()->PopAssignedJob(Pawn);
 	}
 }
