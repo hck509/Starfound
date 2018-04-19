@@ -63,6 +63,11 @@ void UStarfoundMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 void UStarfoundMovementComponent::FollowPath(const TArray<FVector2D>& InFollowingPath)
 {
 	FollowingPath = InFollowingPath;
+
+	if (FollowingPath.Num() > 0)
+	{
+		FollowingPath[0] = FVector2D(GetOwner()->GetActorLocation().Y, GetOwner()->GetActorLocation().Z);
+	}
 }
 
 float UStarfoundMovementComponent::GetSpeed() const
