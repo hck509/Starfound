@@ -39,13 +39,17 @@ float FSideScrollGraph::LeastCostEstimate(void* StartState, void* EndState)
 
 void FSideScrollGraph::AdjacentCost(void* State, TArray<MicroPanther::FStateCost>* AdjacentCosts)
 {
-	const int32 AdjacentX[8] = { 1, 1, 0, -1, -1, -1, 0, 1 };
-	const int32 AdjacentY[8] = { 0, 1, 1, 1, 0, -1, -1, -1 };
-	const int32 Costs[8] = { 1, 2, 1, 2, 1, 2, 1, 2 };
+	//const int32 AdjacentX[8] = { 1, 1, 0, -1, -1, -1, 0, 1 };
+	//const int32 AdjacentY[8] = { 0, 1, 1, 1, 0, -1, -1, -1 };
+	//const int32 Costs[8] = { 1, 2, 1, 2, 1, 2, 1, 2 };
+
+	const int32 AdjacentX[]		= { 1, 0, -1, 0 };
+	const int32 AdjacentY[]		= { 0, 1, 0, -1 };
+	const int32 Costs[]			= { 1, 1, 1, 1 };
 
 	FIntPoint Position = StateToVec2(State);
 
-	for (int i = 0; i < 8; ++i)
+	for (int i = 0; i < ARRAY_COUNT(Costs); ++i)
 	{
 		FIntPoint AdjacentPosition(Position.X + AdjacentX[i], Position.Y + AdjacentY[i]);
 
