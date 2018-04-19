@@ -191,7 +191,7 @@ bool AStarfoundPlayerController::InputKey(FKey Key, EInputEvent EventType, float
 		}
 	}
 
-	if (Key == EKeys::LeftMouseButton)
+	if (Key == EKeys::LeftMouseButton && EventType == IE_Released)
 	{
 		if (ActiveToolType == EToolType::Construct)
 		{
