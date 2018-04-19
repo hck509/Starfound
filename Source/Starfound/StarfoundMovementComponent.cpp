@@ -120,6 +120,18 @@ bool UStarfoundMovementComponent::IsFreefalling() const
 
 	if (!FloorBlock)
 	{
+		// See if we are climbing
+		if (FollowingPath.Num() > 0)
+		{
+			const FIntPoint SecondFloorLocation = PawnLocation + FIntPoint(0, -2);
+			ABlockActor* SecondFloorBlock = BlockScene->GetBlock(SecondFloorLocation.X, SecondFloorLocation.Y);
+
+			if (SecondFloorBlock)
+			{
+				return false;
+			}
+		}
+
 		return true;
 	}
 

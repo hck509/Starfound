@@ -98,6 +98,7 @@ void AStarfoundAIController::MoveToJobLocation()
 
 	if (!bJobAssigned)
 	{
+		DrawDebugString(GetWorld(), FVector(0, 0, 150), "Idle", Pawn, FColor::White, 0, true);
 		return;
 	}
 
@@ -110,6 +111,8 @@ void AStarfoundAIController::MoveToJobLocation()
 
 	const FVector2D JobLocation2D = BlockScene->OriginSpaceGridToWorldSpace2D(Job.Location);
 	const FVector JobLocation(0, JobLocation2D.X, JobLocation2D.Y);
+
+	DrawDebugLine(GetWorld(), Pawn->GetActorLocation(), JobLocation, FColor::Green);
 
 	const float Distance = (JobLocation - Pawn->GetActorLocation()).Size();
 	FVector TargetLocation;
@@ -156,6 +159,8 @@ void AStarfoundAIController::MoveToJobLocation()
 
 		if (!bFoundValidTargetLocation)
 		{
+			DrawDebugString(GetWorld(), FVector(0, 0, 150), "Noway", Pawn, FColor::White, 0, true);
+
 			GameMode->GetJobQueue()->AssignAnotherJob(Pawn);
 		}
 		else

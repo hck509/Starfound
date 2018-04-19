@@ -41,18 +41,27 @@ void ANavigation::UpdateGraph()
 				ABlockActor* BlockActor = BlockScene->GetBlock(WorldGridX, WorldGridY);
 
 				// Have to have floor to move
-				ABlockActor* FloorBlockActor = BlockScene->GetBlock(WorldGridX, WorldGridY - 1);
+				const ABlockActor* FloorBlockActor1 = BlockScene->GetBlock(WorldGridX, WorldGridY - 1);
+				const ABlockActor* FloorBlockActor2 = BlockScene->GetBlock(WorldGridX, WorldGridY - 2);
+				const bool bHasFloor = (FloorBlockActor1 != nullptr) || (FloorBlockActor2 != nullptr);
 
 				// A pawn is 2 block tall
-				ABlockActor* UpperBlockActor = BlockScene->GetBlock(WorldGridX, WorldGridY + 1);
+				const ABlockActor* UpperBlockActor = BlockScene->GetBlock(WorldGridX, WorldGridY + 1);
 
-				if (BlockActor || !FloorBlockActor || UpperBlockActor)
+				if (BlockActor || !bHasFloor || UpperBlockActor)
 				{
 					Graph->SetHeight(X, Y, -1);
 				}
 				else
 				{
-					Graph->SetHeight(X, Y, 0);
+					int32 Cost = 0;
+					
+					if (!FloorBlockActor1)
+					{
+						Cost = 1;
+					}
+
+					Graph->SetHeight(X, Y, Cost);
 				}
 			}
 		}
