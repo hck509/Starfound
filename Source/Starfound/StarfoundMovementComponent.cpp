@@ -20,6 +20,8 @@ void UStarfoundMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+	PopupIfBuried();
+
 	const bool bFalling = IsFreefalling();
 
 	if (bFalling)
@@ -29,45 +31,8 @@ void UStarfoundMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	else
 	{
 		FallingSpeed = 0;
-
-		if (FollowingPath.Num() > 1)
-		{
-			const float MoveSpeed = MaxSpeed;
-			const float MoveDistance = DeltaTime * MoveSpeed;
-
-			float MoveDistanceLeft = MoveDistance;
-
-			while (FollowingPath.Num() > 1 && MoveDistanceLeft > 0)
-			{
-				const float StepDistance = (FollowingPath[1] - FollowingPath[0]).Size();
-
-				if (StepDistance > MoveDistanceLeft)
-				{
-					FollowingPath[0] += (FollowingPath[1] - FollowingPath[0]).GetSafeNormal() * MoveDistanceLeft;
-					MoveDistanceLeft = 0;
-				}
-				else
-				{
-					FollowingPath.RemoveAt(0);
-					MoveDistanceLeft -= StepDistance;
-				}
-			}
-
-			const FVector OldLocation = GetOwner()->GetActorLocation();
-			const FRotator OldRotation = GetOwner()->GetActorRotation();
-			const FVector NewLocation = FVector(0, FollowingPath[0].X, FollowingPath[0].Y);
-			const FVector Movement = NewLocation - OldLocation;
-			const FRotator TargetRotation = (Movement.Y > 0) ? FRotator(0, 0, 0) : FRotator(0, 180, 0);
-			const FRotator NewRotation = FMath::Lerp(OldRotation, TargetRotation, FMath::Clamp(DeltaTime * 10, 0.01f, 0.1f));
-
-			GetOwner()->SetActorLocation(NewLocation);
-			GetOwner()->SetActorRotation(NewRotation);
-
-			if (FollowingPath.Num() == 1)
-			{
-				FollowingPath.Empty();
-			}
-		}
+		
+		TickFollowPath(DeltaTime);
 	}
 }
 
@@ -96,6 +61,48 @@ void UStarfoundMovementComponent::TickFreefall(float DeltaTime)
 	FallingSpeed += 980 * DeltaTime;
 
 	GetOwner()->SetActorLocation(GetOwner()->GetActorLocation() + FVector(0, 0, -FallingSpeed * DeltaTime));
+}
+
+void UStarfoundMovementComponent::TickFollowPath(float DeltaTime)
+{
+	if (FollowingPath.Num() > 1)
+	{
+		const float MoveSpeed = MaxSpeed;
+		const float MoveDistance = DeltaTime * MoveSpeed;
+
+		float MoveDistanceLeft = MoveDistance;
+
+		while (FollowingPath.Num() > 1 && MoveDistanceLeft > 0)
+		{
+			const float StepDistance = (FollowingPath[1] - FollowingPath[0]).Size();
+
+			if (StepDistance > MoveDistanceLeft)
+			{
+				FollowingPath[0] += (FollowingPath[1] - FollowingPath[0]).GetSafeNormal() * MoveDistanceLeft;
+				MoveDistanceLeft = 0;
+			}
+			else
+			{
+				FollowingPath.RemoveAt(0);
+				MoveDistanceLeft -= StepDistance;
+			}
+		}
+
+		const FVector OldLocation = GetOwner()->GetActorLocation();
+		const FRotator OldRotation = GetOwner()->GetActorRotation();
+		const FVector NewLocation = FVector(0, FollowingPath[0].X, FollowingPath[0].Y);
+		const FVector Movement = NewLocation - OldLocation;
+		const FRotator TargetRotation = (Movement.Y > 0) ? FRotator(0, 0, 0) : FRotator(0, 180, 0);
+		const FRotator NewRotation = FMath::Lerp(OldRotation, TargetRotation, FMath::Clamp(DeltaTime * 10, 0.01f, 0.1f));
+
+		GetOwner()->SetActorLocation(NewLocation);
+		GetOwner()->SetActorRotation(NewRotation);
+	}
+
+	if (FollowingPath.Num() == 1)
+	{
+		FollowingPath.Empty();
+	}
 }
 
 bool UStarfoundMovementComponent::IsFreefalling() const
@@ -136,5 +143,33 @@ bool UStarfoundMovementComponent::IsFreefalling() const
 	}
 
 	return false;
+}
+
+void UStarfoundMovementComponent::PopupIfBuried()
+{
+	UBlockActorScene* BlockScene = GetBlockActorScene(GetWorld());
+
+	if (!BlockScene)
+	{
+		return;
+	}
+
+	const FIntPoint PawnLocation = BlockScene->WorldSpaceToOriginSpaceGrid(GetOwner()->GetActorLocation());
+
+	const bool bIsBuried = (BlockScene->GetBlock(PawnLocation) != nullptr);
+
+	if (bIsBuried)
+	{
+		bool bHasEnoughSpaceToPop = 
+			(BlockScene->GetBlock(PawnLocation + FIntPoint(0, 1)) == nullptr)
+			&& (BlockScene->GetBlock(PawnLocation + FIntPoint(0, 2)) == nullptr);
+
+		if (bHasEnoughSpaceToPop)
+		{
+			const FVector NewLocation = BlockScene->OriginSpaceGridToWorldSpace(PawnLocation + FIntPoint(0, 1));
+
+			GetOwner()->SetActorLocation(NewLocation);
+		}
+	}
 }
 

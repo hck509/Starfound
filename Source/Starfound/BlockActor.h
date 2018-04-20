@@ -93,6 +93,7 @@ public:
 	}
 
 	ABlockActor* GetBlock(int32 X, int32 Y) const;
+	ABlockActor* GetBlock(const FIntPoint& Location) const;
 
 	void DebugDrawBoxAt(const FIntPoint& OriginSpaceGridLocation, const FColor& Color) const;
 

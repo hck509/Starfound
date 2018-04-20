@@ -186,6 +186,11 @@ ABlockActor* UBlockActorScene::GetBlock(int32 X, int32 Y) const
 	return BlockActors[Index];
 }
 
+ABlockActor* UBlockActorScene::GetBlock(const FIntPoint& Location) const
+{
+	return GetBlock(Location.X, Location.Y);
+}
+
 void UBlockActorScene::DebugDrawBoxAt(const FIntPoint& OriginSpaceGridLocation, const FColor& Color) const
 {
 	FVector Location = OriginSpaceGridToWorldSpace(OriginSpaceGridLocation);

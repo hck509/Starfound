@@ -31,8 +31,12 @@ public:
 	float GetMaxSpeed() const { return MaxSpeed; }
 
 private:
-	void TickFreefall(float DeltaTime);
 	bool IsFreefalling() const;
+
+	void PopupIfBuried();
+	void TickFreefall(float DeltaTime);
+	void TickFollowPath(float DeltaTime);
+
 
 	/**
 	 * Path Following
