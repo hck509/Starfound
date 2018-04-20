@@ -6,6 +6,28 @@
 
 const static float JobReachDistance = 350;
 
+static bool _IsJobInReach(const AStarfoundPawn& Pawn, const FIntPoint& JobLocation)
+{
+	UBlockActorScene* BlockScene = GetBlockActorScene(Pawn.GetWorld());
+
+	if (!BlockScene)
+	{
+		return false;
+	}
+
+	const FIntPoint PawnLocation = BlockScene->WorldSpaceToOriginSpaceGrid(Pawn.GetActorLocation());
+
+	const FIntPoint LocationDiff = PawnLocation - JobLocation;
+
+	if (FMath::Abs(LocationDiff.X) <= 1 && FMath::Abs(LocationDiff.Y) <= 3)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+
 AStarfoundAIController::AStarfoundAIController()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -123,11 +145,12 @@ void AStarfoundAIController::MoveToJobLocation()
 
 	DrawDebugLine(GetWorld(), Pawn->GetActorLocation(), JobLocation, FColor::Green);
 
-	const float Distance = (JobLocation - Pawn->GetActorLocation()).Size();
 	FVector TargetLocation;
 	bool bFoundValidTargetLocation = false;
 
-	if (Distance > JobReachDistance)
+	const bool bJobInReach = _IsJobInReach(*Pawn, Job.Location);
+
+	if (!bJobInReach)
 	{
 		float TargetLocationMinDistance = 10E5;
 		
@@ -189,6 +212,11 @@ void AStarfoundAIController::ExecuteJobIfInRange(float DeltaSeconds)
 		return;
 	}
 
+	if (Pawn->GetStarfoundMovementController()->GetSpeed() != 0)
+	{
+		return;
+	}
+
 	AStarfoundGameMode* GameMode = Cast<AStarfoundGameMode>(GetWorld()->GetAuthGameMode());
 	if (!GameMode)
 	{
@@ -210,12 +238,9 @@ void AStarfoundAIController::ExecuteJobIfInRange(float DeltaSeconds)
 		return;
 	}
 
-	const FVector2D JobLocation2D = BlockScene->OriginSpaceGridToWorldSpace2D(Job.Location);
-	const FVector JobLocation(0, JobLocation2D.X, JobLocation2D.Y);
+	const bool bJobInReach = _IsJobInReach(*Pawn, Job.Location);
 
-	const float Distance = (JobLocation - Pawn->GetActorLocation()).Size();
-
-	if (Distance <= JobReachDistance)
+	if (bJobInReach)
 	{
 		const float ProgressPercentage = GameMode->GetJobQueue()->ProgressAssignedJob(Pawn, DeltaSeconds * 30.0f);
 		
