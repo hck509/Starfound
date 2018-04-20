@@ -171,22 +171,17 @@ void UBlockActorScene::UnRegisterBlockActor(ABlockActor* BlockActor)
 
 ABlockActor* UBlockActorScene::GetBlock(int32 X, int32 Y) const
 {
-	if (X < -GridX || X > GridX)
+	if (X < 0 || X >= GetNumGridX())
 	{
 		return nullptr;
 	}
 
-	if (Y < -GridY || Y > GridY)
+	if (Y < 0 || Y >= GetNumGridY())
 	{
 		return nullptr;
 	}
 
-	const int32 OriginX = -GridX;
-	const int32 OriginY = -GridY;
-	const int32 XFromOrigin = X - OriginX;
-	const int32 YFromOrigin = Y - OriginY;
-	const int32 NumCols = (GridX * 2) + 1;
-	const int32 Index = (XFromOrigin * NumCols) + YFromOrigin;
+	const int32 Index = (X * GetNumGridX()) + Y;
 
 	return BlockActors[Index];
 }

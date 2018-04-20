@@ -113,7 +113,7 @@ bool UStarfoundMovementComponent::IsFreefalling() const
 		return false;
 	}
 
-	const FIntPoint PawnLocation = BlockScene->WorldSpaceToWorldSpaceGrid(GetOwner()->GetActorLocation());
+	const FIntPoint PawnLocation = BlockScene->WorldSpaceToOriginSpaceGrid(GetOwner()->GetActorLocation());
 	const FIntPoint FloorLocation = PawnLocation + FIntPoint(0, -1);
 
 	ABlockActor* FloorBlock = BlockScene->GetBlock(FloorLocation.X, FloorLocation.Y);

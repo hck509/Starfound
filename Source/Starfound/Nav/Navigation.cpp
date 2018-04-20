@@ -36,21 +36,19 @@ void ANavigation::UpdateGraph()
 		{
 			for (int32 Y = 0; Y < NumY; ++Y)
 			{
-				const int32 WorldGridX = BlockScene->OriginSpaceGridToWorldSpaceGridX(X);
-				const int32 WorldGridY = BlockScene->OriginSpaceGridToWorldSpaceGridX(Y);
-				ABlockActor* BlockActor = BlockScene->GetBlock(WorldGridX, WorldGridY);
+				ABlockActor* BlockActor = BlockScene->GetBlock(X, Y);
 
 				// Have to have floor to move
-				const ABlockActor* FloorBlockActor1 = BlockScene->GetBlock(WorldGridX, WorldGridY - 1);
-				const ABlockActor* FloorBlockActor2 = BlockScene->GetBlock(WorldGridX, WorldGridY - 2);
-				const ABlockActor* LeftWallBlockActor = BlockScene->GetBlock(WorldGridX - 1, WorldGridY - 1);
-				const ABlockActor* RightWallBlockActor = BlockScene->GetBlock(WorldGridX + 1, WorldGridY - 1);
+				const ABlockActor* FloorBlockActor1 = BlockScene->GetBlock(X, Y - 1);
+				const ABlockActor* FloorBlockActor2 = BlockScene->GetBlock(X, Y - 2);
+				const ABlockActor* LeftWallBlockActor = BlockScene->GetBlock(X - 1, Y - 1);
+				const ABlockActor* RightWallBlockActor = BlockScene->GetBlock(X + 1, Y - 1);
 
 				const bool bHasFloor = (FloorBlockActor1) 
 					|| (FloorBlockActor2 && (LeftWallBlockActor || RightWallBlockActor));
 
 				// A pawn is 2 block tall
-				const ABlockActor* UpperBlockActor = BlockScene->GetBlock(WorldGridX, WorldGridY + 1);
+				const ABlockActor* UpperBlockActor = BlockScene->GetBlock(X, Y + 1);
 
 				if (BlockActor || !bHasFloor || UpperBlockActor)
 				{

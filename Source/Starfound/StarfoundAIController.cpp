@@ -165,11 +165,8 @@ void AStarfoundAIController::MoveToJobLocation()
 
 				const FIntPoint Location = Job.Location + FIntPoint(X, Y);
 
-				const int32 WorldGridX = BlockScene->OriginSpaceGridToWorldSpaceGridX(Location.X);
-				const int32 WorldGridY = BlockScene->OriginSpaceGridToWorldSpaceGridX(Location.Y);
-
 				const bool bFoundValidNeighbor = GameMode->GetNavigation()->IsValidGridLocation(Location);
-				const bool bHasFloor = BlockScene->GetBlock(WorldGridX, WorldGridY - 1);
+				const bool bHasFloor = BlockScene->GetBlock(Location.X, Location.Y - 1);
 
 				if (bFoundValidNeighbor && bHasFloor)
 				{
