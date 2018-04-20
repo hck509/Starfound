@@ -82,7 +82,7 @@ class UStarfoundJobExecutor : public UObject
 public:
 	GENERATED_BODY()
 
-	void ExecuteJob(const FStarfoundJob& Job);
+	void FinishJob(const FStarfoundJob& Job);
 
 private:
 	void HandleConstruct(const FStarfoundJob& Job);

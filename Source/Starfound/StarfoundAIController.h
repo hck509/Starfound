@@ -22,13 +22,13 @@ public:
 	bool MoveToLocation(const FVector& TargetLocation);
 
 	UFUNCTION(BlueprintCallable)
-	bool IsExecutingJob() const { return bExecutingJob; }
+	bool IsWorking() const { return bWorking; }
 
 private:
 	void AssignJobIfNeeded();
 	void MoveToJobLocation();
-	void ExecuteJobIfInRange(float DeltaSeconds);
+	void WorkOnJobIfInRange(float DeltaSeconds);
 
 	float ThinkingCoolSeconds;
-	bool bExecutingJob;
+	bool bWorking;
 };

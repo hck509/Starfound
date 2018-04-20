@@ -32,7 +32,7 @@ AStarfoundAIController::AStarfoundAIController()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	bExecutingJob = false;
+	bWorking = false;
 }
 
 void AStarfoundAIController::Tick(float DeltaSeconds)
@@ -48,7 +48,7 @@ void AStarfoundAIController::Tick(float DeltaSeconds)
 		MoveToJobLocation();
 	}
 
-	ExecuteJobIfInRange(DeltaSeconds);
+	WorkOnJobIfInRange(DeltaSeconds);
 }
 
 bool AStarfoundAIController::MoveToLocation(const FVector& TargetLocation)
@@ -201,9 +201,9 @@ void AStarfoundAIController::MoveToJobLocation()
 	}
 }
 
-void AStarfoundAIController::ExecuteJobIfInRange(float DeltaSeconds)
+void AStarfoundAIController::WorkOnJobIfInRange(float DeltaSeconds)
 {
-	bExecutingJob = false;
+	bWorking = false;
 
 	AStarfoundPawn* Pawn = Cast<AStarfoundPawn>(GetPawn());
 
@@ -246,14 +246,14 @@ void AStarfoundAIController::ExecuteJobIfInRange(float DeltaSeconds)
 		
 		if (ProgressPercentage > 100.0f)
 		{
-			GameMode->GetJobExecutor()->ExecuteJob(Job);
+			GameMode->GetJobExecutor()->FinishJob(Job);
 			GameMode->GetJobQueue()->PopAssignedJob(Pawn);
 
-			bExecutingJob = false;
+			bWorking = false;
 		}
 		else
 		{
-			bExecutingJob = true;
+			bWorking = true;
 		}
 	}
 }

@@ -170,7 +170,7 @@ void FStarfoundJob::InitDestruct(TWeakObjectPtr<class ABlockActor> Actor)
 	Location = BlockScene->WorldSpaceToOriginSpaceGrid(Actor->GetActorLocation());
 }
 
-void UStarfoundJobExecutor::ExecuteJob(const FStarfoundJob& Job)
+void UStarfoundJobExecutor::FinishJob(const FStarfoundJob& Job)
 {
 	switch (Job.JobType)
 	{
