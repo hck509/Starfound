@@ -28,11 +28,15 @@ void UStarfoundMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	{
 		TickFreefall(DeltaTime);
 	}
-	else
+	else if (FollowingPath.Num() > 0)
 	{
 		FallingSpeed = 0;
 		
 		TickFollowPath(DeltaTime);
+	}
+	else
+	{
+		TickRotateToJobLocation(DeltaTime);
 	}
 }
 
@@ -92,7 +96,8 @@ void UStarfoundMovementComponent::TickFollowPath(float DeltaTime)
 		const FRotator OldRotation = GetOwner()->GetActorRotation();
 		const FVector NewLocation = FVector(0, FollowingPath[0].X, FollowingPath[0].Y);
 		const FVector Movement = NewLocation - OldLocation;
-		const FRotator TargetRotation = (Movement.Y > 0) ? FRotator(0, 0, 0) : FRotator(0, 180, 0);
+		const FRotator TargetRotation = (Movement.Y == 0) ? OldRotation : 
+			(Movement.Y > 0) ? FRotator(0, 0, 0) : FRotator(0, 180, 0);
 		const FRotator NewRotation = FMath::Lerp(OldRotation, TargetRotation, FMath::Clamp(DeltaTime * 10, 0.01f, 0.1f));
 
 		GetOwner()->SetActorLocation(NewLocation);
@@ -102,6 +107,39 @@ void UStarfoundMovementComponent::TickFollowPath(float DeltaTime)
 	if (FollowingPath.Num() == 1)
 	{
 		FollowingPath.Empty();
+	}
+}
+
+void UStarfoundMovementComponent::TickRotateToJobLocation(float DeltaTime)
+{
+	UBlockActorScene* BlockScene = GetBlockActorScene(GetWorld());
+
+	if (!BlockScene)
+	{
+		return;
+	}
+
+	AStarfoundGameMode* GameMode = Cast<AStarfoundGameMode>(GetWorld()->GetAuthGameMode());
+	if (!GameMode)
+	{
+		return;
+	}
+
+	FStarfoundJob Job;
+	const bool bHasJob = GameMode->GetJobQueue()->GetAssignedJob(Cast<AStarfoundPawn>(GetOwner()), Job);
+
+	if (bHasJob)
+	{
+		const FRotator OldRotation = GetOwner()->GetActorRotation();
+		const FVector JobLocation = BlockScene->OriginSpaceGridToWorldSpace(Job.Location);
+
+		const FVector Direction = JobLocation - GetOwner()->GetActorLocation();
+
+		const FRotator TargetRotation = (Direction.Y == 0) ? OldRotation :
+			(Direction.Y > 0) ? FRotator(0, 0, 0) : FRotator(0, 180, 0);
+		const FRotator NewRotation = FMath::Lerp(OldRotation, TargetRotation, FMath::Clamp(DeltaTime * 10, 0.01f, 0.1f));
+
+		GetOwner()->SetActorRotation(NewRotation);
 	}
 }
 

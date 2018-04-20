@@ -36,7 +36,7 @@ private:
 	void PopupIfBuried();
 	void TickFreefall(float DeltaTime);
 	void TickFollowPath(float DeltaTime);
-
+	void TickRotateToJobLocation(float DeltaTime);
 
 	/**
 	 * Path Following
