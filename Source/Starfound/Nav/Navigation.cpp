@@ -43,7 +43,11 @@ void ANavigation::UpdateGraph()
 				// Have to have floor to move
 				const ABlockActor* FloorBlockActor1 = BlockScene->GetBlock(WorldGridX, WorldGridY - 1);
 				const ABlockActor* FloorBlockActor2 = BlockScene->GetBlock(WorldGridX, WorldGridY - 2);
-				const bool bHasFloor = (FloorBlockActor1 != nullptr) || (FloorBlockActor2 != nullptr);
+				const ABlockActor* LeftWallBlockActor = BlockScene->GetBlock(WorldGridX - 1, WorldGridY - 1);
+				const ABlockActor* RightWallBlockActor = BlockScene->GetBlock(WorldGridX + 1, WorldGridY - 1);
+
+				const bool bHasFloor = (FloorBlockActor1) 
+					|| (FloorBlockActor2 && (LeftWallBlockActor || RightWallBlockActor));
 
 				// A pawn is 2 block tall
 				const ABlockActor* UpperBlockActor = BlockScene->GetBlock(WorldGridX, WorldGridY + 1);
@@ -150,9 +154,9 @@ void ANavigation::DebugDraw() const
 
 			const FVector WorldPosition(55, WorldGridX * BlockScene->GetGridCellSize(), WorldGridY * BlockScene->GetGridCellSize());
 
-			if (Height == -1)
+			if (Height != -1)
 			{
-				DrawDebugPoint(GetWorld(), WorldPosition, 20.0f, FColor::Green);
+				DrawDebugPoint(GetWorld(), WorldPosition, 5.0f, FColor::Green);
 			}
 		}
 	}

@@ -163,11 +163,17 @@ void AStarfoundAIController::MoveToJobLocation()
 					continue;
 				}
 
-				bool bFoundValidNeighbor = GameMode->GetNavigation()->IsValidGridLocation(Job.Location + FIntPoint(X, Y));
+				const FIntPoint Location = Job.Location + FIntPoint(X, Y);
 
-				if (bFoundValidNeighbor)
+				const int32 WorldGridX = BlockScene->OriginSpaceGridToWorldSpaceGridX(Location.X);
+				const int32 WorldGridY = BlockScene->OriginSpaceGridToWorldSpaceGridX(Location.Y);
+
+				const bool bFoundValidNeighbor = GameMode->GetNavigation()->IsValidGridLocation(Location);
+				const bool bHasFloor = BlockScene->GetBlock(WorldGridX, WorldGridY - 1);
+
+				if (bFoundValidNeighbor && bHasFloor)
 				{
-					const FVector TargetLocationCandidate = BlockScene->OriginSpaceGridToWorldSpace(Job.Location + FIntPoint(X, Y));
+					const FVector TargetLocationCandidate = BlockScene->OriginSpaceGridToWorldSpace(Location);
 
 					TArray<FVector2D> PathPoints;
 					const bool bPathFound = GameMode->GetNavigation()->FindPath(Pawn->GetActorLocation(), TargetLocationCandidate, PathPoints);
