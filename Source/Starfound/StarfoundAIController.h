@@ -25,4 +25,6 @@ private:
 	void AssignJobIfNeeded();
 	void MoveToJobLocation();
 	void ExecuteJobIfInRange();
+
+	float ThinkingCoolSeconds;
 };

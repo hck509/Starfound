@@ -4,7 +4,7 @@
 #include "StarfoundPawn.h"
 #include "DrawDebugHelpers.h"
 
-const static float JobReachDistance = 150;
+const static float JobReachDistance = 350;
 
 AStarfoundAIController::AStarfoundAIController()
 {
@@ -15,8 +15,15 @@ void AStarfoundAIController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	AssignJobIfNeeded();
-	MoveToJobLocation();
+	ThinkingCoolSeconds -= DeltaSeconds;
+
+	if (ThinkingCoolSeconds < 0)
+	{
+		ThinkingCoolSeconds = 1.0f;
+		AssignJobIfNeeded();
+		MoveToJobLocation();
+	}
+
 	ExecuteJobIfInRange();
 }
 
@@ -124,16 +131,14 @@ void AStarfoundAIController::MoveToJobLocation()
 		
 		for (int32 X = -1; X <= 1; ++X)
 		{
-			bool bFoundValidNeighbor = false;
-
-			for (int32 Y = -1; Y <= 1; ++Y)
+			for (int32 Y = -3; Y <= 1; ++Y)
 			{
 				if (X == 0 && Y == 0)
 				{
 					continue;
 				}
 
-				bFoundValidNeighbor = GameMode->GetNavigation()->IsValidGridLocation(Job.Location + FIntPoint(X, Y));
+				bool bFoundValidNeighbor = GameMode->GetNavigation()->IsValidGridLocation(Job.Location + FIntPoint(X, Y));
 
 				if (bFoundValidNeighbor)
 				{
