@@ -9,6 +9,8 @@ const static float JobReachDistance = 350;
 AStarfoundAIController::AStarfoundAIController()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	bExecutingJob = false;
 }
 
 void AStarfoundAIController::Tick(float DeltaSeconds)
@@ -24,7 +26,7 @@ void AStarfoundAIController::Tick(float DeltaSeconds)
 		MoveToJobLocation();
 	}
 
-	ExecuteJobIfInRange();
+	ExecuteJobIfInRange(DeltaSeconds);
 }
 
 bool AStarfoundAIController::MoveToLocation(const FVector& TargetLocation)
@@ -176,8 +178,10 @@ void AStarfoundAIController::MoveToJobLocation()
 	}
 }
 
-void AStarfoundAIController::ExecuteJobIfInRange()
+void AStarfoundAIController::ExecuteJobIfInRange(float DeltaSeconds)
 {
+	bExecutingJob = false;
+
 	AStarfoundPawn* Pawn = Cast<AStarfoundPawn>(GetPawn());
 
 	if (!Pawn)
@@ -213,7 +217,18 @@ void AStarfoundAIController::ExecuteJobIfInRange()
 
 	if (Distance <= JobReachDistance)
 	{
-		GameMode->GetJobExecutor()->ExecuteJob(Job);
-		GameMode->GetJobQueue()->PopAssignedJob(Pawn);
+		const float ProgressPercentage = GameMode->GetJobQueue()->ProgressAssignedJob(Pawn, DeltaSeconds * 30.0f);
+		
+		if (ProgressPercentage > 100.0f)
+		{
+			GameMode->GetJobExecutor()->ExecuteJob(Job);
+			GameMode->GetJobQueue()->PopAssignedJob(Pawn);
+
+			bExecutingJob = false;
+		}
+		else
+		{
+			bExecutingJob = true;
+		}
 	}
 }

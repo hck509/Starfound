@@ -21,10 +21,14 @@ public:
 
 	bool MoveToLocation(const FVector& TargetLocation);
 
+	UFUNCTION(BlueprintCallable)
+	bool IsExecutingJob() const { return bExecutingJob; }
+
 private:
 	void AssignJobIfNeeded();
 	void MoveToJobLocation();
-	void ExecuteJobIfInRange();
+	void ExecuteJobIfInRange(float DeltaSeconds);
 
 	float ThinkingCoolSeconds;
+	bool bExecutingJob;
 };

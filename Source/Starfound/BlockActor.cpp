@@ -58,7 +58,7 @@ void ABlockActor::TransformUpdated(USceneComponent* RootComponent, EUpdateTransf
 	{
 		UBlockActorScene* BlockScene = GetBlockActorScene(GetWorld());
 
-		if (ensure(BlockScene))
+		if (BlockScene)
 		{
 			BlockScene->RegisterBlockActor(this);
 		}

@@ -101,6 +101,25 @@ bool UStarfoundJobQueue::GetAssignedJob(const AStarfoundPawn* Pawn, FStarfoundJo
 	return false;
 }
 
+float UStarfoundJobQueue::ProgressAssignedJob(const AStarfoundPawn* Pawn, float AddProgressPercentage)
+{
+	if (!ensure(Pawn))
+	{
+		return 0;
+	}
+
+	FStarfoundJob* Job = AssignedJobs.Find(Pawn);
+
+	if (ensure(Job))
+	{
+		Job->ProgressPercentage += AddProgressPercentage;
+
+		return Job->ProgressPercentage;
+	}
+
+	return 0;
+}
+
 void UStarfoundJobQueue::PopAssignedJob(const AStarfoundPawn* Pawn)
 {
 	AssignedJobs.Remove(Pawn);

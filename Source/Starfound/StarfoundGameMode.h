@@ -27,6 +27,9 @@ struct FStarfoundJob
 	UPROPERTY()
 	FIntPoint Location;
 
+	UPROPERTY()
+	float ProgressPercentage;
+
 	// Construct
 	UPROPERTY()
 	TSubclassOf<ABlockActor> ConstructBlockClass;
@@ -58,6 +61,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	bool GetAssignedJob(const AStarfoundPawn* Pawn, FStarfoundJob& OutJob);
+
+	float ProgressAssignedJob(const AStarfoundPawn* Pawn, float AddProgressPercentage);
 
 	UFUNCTION(BlueprintCallable)
 	void PopAssignedJob(const AStarfoundPawn* Pawn);
