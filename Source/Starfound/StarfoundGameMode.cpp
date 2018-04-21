@@ -1,5 +1,6 @@
 #include "StarfoundGameMode.h"
 #include "StarfoundCharacter.h"
+#include "StarfoundSpectatorPawn.h"
 #include "UObject/ConstructorHelpers.h"
 
 AStarfoundGameMode::AStarfoundGameMode()
@@ -10,6 +11,8 @@ AStarfoundGameMode::AStarfoundGameMode()
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
+
+	SpectatorClass = AStarfoundSpectatorPawn::StaticClass();
 
 	PrimaryActorTick.bCanEverTick = true;
 }
