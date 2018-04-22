@@ -26,7 +26,7 @@ void AStarfoundGameMode::StartPlay()
 	Super::StartPlay();
 
 	BlockGenerator = NewObject<UBlockGenerator>();
-	BlockGenerator->GenerateRandomBlockWorld(GetWorld(), BlockClasses);
+	BlockGenerator->GenerateRandomBlockWorld(GetWorld(), Configuration.ScenaryBlocks);
 
 	Navigation = GetWorld()->SpawnActor<ANavigation>();
 

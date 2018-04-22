@@ -22,6 +22,8 @@ public:
 	virtual void PostRegisterAllComponents() override;
 	virtual void PostUnregisterAllComponents() override;
 
+
+
 	void SetTemporal(bool bInTemporal) { bTemporal = bInTemporal; }
 	bool IsTemporal() const { return bTemporal; }
 

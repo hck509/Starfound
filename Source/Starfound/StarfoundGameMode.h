@@ -91,6 +91,19 @@ private:
 	void HandleDestruct(const FStarfoundJob& Job);
 };
 
+USTRUCT(BlueprintType)
+struct FStarfoundConfiguration
+{
+	GENERATED_BODY()
+
+	// Blocks that auto generate at beginning
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TArray<TSubclassOf<ABlockActor>> ScenaryBlocks;
+
+	// Blocks that player can construct
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TArray<TSubclassOf<ABlockActor>> ConstructableBlocks;
+};
 
 UCLASS(minimalapi)
 class AStarfoundGameMode : public AGameModeBase
@@ -112,10 +125,13 @@ public:
 	UFUNCTION(BlueprintCallable)
 	UStarfoundJobExecutor* GetJobExecutor() const { return JobExecutor; }
 
+	UFUNCTION(BlueprintCallable)
+	const FStarfoundConfiguration& GetConfiguration() const { return Configuration; }
+
 private:
 
 	UPROPERTY(EditDefaultsOnly)
-	TArray<TSubclassOf<ABlockActor>> BlockClasses;
+	FStarfoundConfiguration Configuration;
 
 	UPROPERTY(Transient)
 	UBlockGenerator* BlockGenerator;

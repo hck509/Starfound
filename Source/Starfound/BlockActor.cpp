@@ -32,7 +32,10 @@ void ABlockActor::PostRegisterAllComponents()
 {
 	Super::PostRegisterAllComponents();
 
-	GetRootComponent()->TransformUpdated.AddUObject(this, &ABlockActor::TransformUpdated);
+	if (GetRootComponent())
+	{
+		GetRootComponent()->TransformUpdated.AddUObject(this, &ABlockActor::TransformUpdated);
+	}
 }
 
 void ABlockActor::PostUnregisterAllComponents()
