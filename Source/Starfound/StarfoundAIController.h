@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Controller.h"
+#include "Classes/AIController.h"
 #include "StarfoundAIController.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class STARFOUND_API AStarfoundAIController : public AController
+class STARFOUND_API AStarfoundAIController : public AAIController
 {
 	GENERATED_BODY()
 	
@@ -26,7 +26,11 @@ public:
 
 private:
 	void AssignJobIfNeeded();
+
+	UFUNCTION(BlueprintCallable)
 	void MoveToJobLocation();
+
+	UFUNCTION(BlueprintCallable)
 	void WorkOnJobIfInRange(float DeltaSeconds);
 
 	float ThinkingCoolSeconds;

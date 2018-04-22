@@ -55,7 +55,7 @@ public:
 	void AddJob(const FStarfoundJob& Job);
 
 	UFUNCTION(BlueprintCallable)
-	void AssignJob(AStarfoundPawn* Pawn);
+	bool AssignJob(AStarfoundPawn* Pawn);
 
 	void AssignAnotherJob(AStarfoundPawn* Pawn);
 

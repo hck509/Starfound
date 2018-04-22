@@ -39,16 +39,21 @@ void AStarfoundAIController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	ThinkingCoolSeconds -= DeltaSeconds;
-
-	if (ThinkingCoolSeconds < 0)
+	if (!BrainComponent)
 	{
-		ThinkingCoolSeconds = 1.0f;
-		AssignJobIfNeeded();
-		MoveToJobLocation();
-	}
+		// Non-Behavior tree mode (C++ AI)
 
-	WorkOnJobIfInRange(DeltaSeconds);
+		ThinkingCoolSeconds -= DeltaSeconds;
+
+		if (ThinkingCoolSeconds < 0)
+		{
+			ThinkingCoolSeconds = 1.0f;
+			AssignJobIfNeeded();
+			MoveToJobLocation();
+		}
+
+		WorkOnJobIfInRange(DeltaSeconds);
+	}
 }
 
 bool AStarfoundAIController::MoveToLocation(const FVector& TargetLocation)

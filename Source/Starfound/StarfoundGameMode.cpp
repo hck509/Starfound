@@ -48,23 +48,30 @@ void UStarfoundJobQueue::AddJob(const FStarfoundJob& Job)
 	JobQueue.Add(Job);
 }
 
-void UStarfoundJobQueue::AssignJob(AStarfoundPawn* Pawn)
+bool UStarfoundJobQueue::AssignJob(AStarfoundPawn* Pawn)
 {
+	if (!ensure(Pawn))
+	{
+		return false;
+	}
+
 	if (AssignedJobs.Find(Pawn))
 	{
 		ensure(0);
-		return;
+		return false;
 	}
 
 	if (JobQueue.Num() == 0)
 	{
-		return;
+		return false;
 	}
 
 	FStarfoundJob Job = JobQueue[0];
 	JobQueue.RemoveAt(0);
 
 	AssignedJobs.Add(Pawn, Job);
+
+	return true;
 }
 
 void UStarfoundJobQueue::AssignAnotherJob(AStarfoundPawn* Pawn)
@@ -88,7 +95,7 @@ void UStarfoundJobQueue::AssignAnotherJob(AStarfoundPawn* Pawn)
 
 bool UStarfoundJobQueue::GetAssignedJob(const AStarfoundPawn* Pawn, FStarfoundJob& OutJob)
 {
-	if (!Pawn)
+	if (!ensure(Pawn))
 	{
 		return false;
 	}
