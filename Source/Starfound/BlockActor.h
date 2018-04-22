@@ -22,7 +22,10 @@ public:
 	virtual void PostRegisterAllComponents() override;
 	virtual void PostUnregisterAllComponents() override;
 
+	virtual void OnBlockDestructed() { OnBlockDestructedBP(); }
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnBlockDestructedBP();
 
 	void SetTemporal(bool bInTemporal) { bTemporal = bInTemporal; }
 	bool IsTemporal() const { return bTemporal; }

@@ -224,8 +224,9 @@ void UStarfoundJobExecutor::HandleConstruct(const FStarfoundJob& Job)
 
 void UStarfoundJobExecutor::HandleDestruct(const FStarfoundJob& Job)
 {
-	if (Job.DestructBlockActor.IsValid())
+	if (Job.DestructBlockActor.IsValid() && !Job.DestructBlockActor->IsPendingKillPending())
 	{
+		Job.DestructBlockActor->OnBlockDestructed();
 		Job.DestructBlockActor->Destroy();
 	}
 }
