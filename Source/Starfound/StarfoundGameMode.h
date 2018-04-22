@@ -38,6 +38,8 @@ struct FStarfoundJob
 	UPROPERTY(BlueprintReadOnly)
 	TWeakObjectPtr<class ABlockActor> DestructBlockActor;
 
+	FStarfoundJob();
+
 	void InitConstruct(const FIntPoint& InLocation, const TSubclassOf<ABlockActor>& InConstructBlockClass);
 	void InitDestruct(TWeakObjectPtr<class ABlockActor> Actor);
 };

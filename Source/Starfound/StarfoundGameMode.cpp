@@ -158,6 +158,12 @@ void UStarfoundJobQueue::DebugDraw() const
 	}
 }
 
+FStarfoundJob::FStarfoundJob() 
+	: ProgressPercentage(0)
+{
+
+}
+
 void FStarfoundJob::InitConstruct(const FIntPoint& InLocation, const TSubclassOf<ABlockActor>& InConstructBlockClass)
 {
 	JobType = EStarfoundJobType::Construct;

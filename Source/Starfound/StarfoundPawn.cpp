@@ -1,6 +1,8 @@
 #include "StarfoundPawn.h"
 #include "StarfoundAIController.h"
 #include "StarfoundMovementComponent.h"
+#include "StarfoundGameMode.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values
 AStarfoundPawn::AStarfoundPawn()
@@ -24,7 +26,6 @@ void AStarfoundPawn::BeginPlay()
 void AStarfoundPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 // Called to bind functionality to input
