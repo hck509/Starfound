@@ -21,21 +21,21 @@ struct FStarfoundJob
 {
 	GENERATED_BODY()
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	EStarfoundJobType JobType;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	FIntPoint Location;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	float ProgressPercentage;
 
 	// Construct
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	TSubclassOf<ABlockActor> ConstructBlockClass;
 
 	// Destruct
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	TWeakObjectPtr<class ABlockActor> DestructBlockActor;
 
 	void InitConstruct(const FIntPoint& InLocation, const TSubclassOf<ABlockActor>& InConstructBlockClass);

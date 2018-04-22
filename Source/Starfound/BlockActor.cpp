@@ -221,3 +221,13 @@ UBlockActorScene* GetBlockActorScene(UWorld* World)
 
 	return BlockScene;
 }
+
+UBlockActorScene* UStarfoundHelper::GetBlockActorScene(const UObject* WorldContextObject)
+{
+	if (!WorldContextObject)
+	{
+		return nullptr;
+	}
+
+	return ::GetBlockActorScene(WorldContextObject->GetWorld());
+}

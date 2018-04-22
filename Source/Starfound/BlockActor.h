@@ -87,12 +87,15 @@ public:
 		return FVector2D((Point.X + GetOriginX()) * GridCellSize, (Point.Y + GetOriginY()) * GridCellSize);
 	}
 
+	UFUNCTION(BlueprintCallable)
 	FVector OriginSpaceGridToWorldSpace(const FIntPoint& Point) const
 	{
 		return FVector(0, (Point.X + GetOriginX()) * GridCellSize, (Point.Y + GetOriginY()) * GridCellSize);
 	}
 
 	ABlockActor* GetBlock(int32 X, int32 Y) const;
+
+	UFUNCTION(BlueprintCallable)
 	ABlockActor* GetBlock(const FIntPoint& Location) const;
 
 	void DebugDrawBoxAt(const FIntPoint& OriginSpaceGridLocation, const FColor& Color) const;
@@ -112,3 +115,14 @@ private:
 };
 
 UBlockActorScene* GetBlockActorScene(UWorld* World);
+
+
+UCLASS()
+class UStarfoundHelper : public UObject
+{
+	GENERATED_BODY()
+public:
+
+	UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContextObject"))
+	static UBlockActorScene* GetBlockActorScene(const UObject* WorldContextObject);
+};
