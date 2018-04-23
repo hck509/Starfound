@@ -43,9 +43,44 @@ void AStarfoundGameMode::Tick(float DeltaTime)
 	JobQueue->DebugDraw();
 }
 
-void UStarfoundJobQueue::AddJob(const FStarfoundJob& Job)
+UStarfoundJobQueue::UStarfoundJobQueue()
+	: NextJobId(0)
+{
+
+}
+
+int32 UStarfoundJobQueue::AddJob(const FStarfoundJob& Job)
 {
 	JobQueue.Add(Job);
+
+	JobQueue.Last().JobId = NextJobId;
+
+	++NextJobId;
+
+	return JobQueue.Last().JobId;
+}
+
+bool UStarfoundJobQueue::RemoveJob(int32 JobId)
+{
+	for (int i = 0; i < JobQueue.Num(); ++i)
+	{
+		if (JobQueue[i].JobId == JobId)
+		{
+			JobQueue.RemoveAt(i);
+			return true;
+		}
+	}
+
+	for (auto&& Iter : AssignedJobs)
+	{
+		if (Iter.Value.JobId == JobId)
+		{
+			AssignedJobs.Remove(Iter.Key);
+			return true;
+		}
+	}
+
+	return false;
 }
 
 bool UStarfoundJobQueue::AssignJob(AStarfoundPawn* Pawn)
@@ -186,6 +221,13 @@ void FStarfoundJob::InitDestruct(TWeakObjectPtr<class ABlockActor> Actor)
 	Location = BlockScene->WorldSpaceToOriginSpaceGrid(Actor->GetActorLocation());
 }
 
+void FStarfoundJob::InitDelivery(ABlockActor* Actor, EItemType ItemType)
+{
+	JobType = EStarfoundJobType::Deliver;
+	DeliverItemType = ItemType;
+	DeliverTargetBlockActor = Actor;
+}
+
 void UStarfoundJobExecutor::FinishJob(const FStarfoundJob& Job)
 {
 	switch (Job.JobType)
@@ -229,4 +271,14 @@ void UStarfoundJobExecutor::HandleDestruct(const FStarfoundJob& Job)
 		Job.DestructBlockActor->OnBlockDestructed();
 		Job.DestructBlockActor->Destroy();
 	}
+}
+
+AStarfoundGameMode* GetStarfoundGameMode(UWorld* World)
+{
+	if (!World)
+	{
+		return nullptr;
+	}
+
+	return Cast<AStarfoundGameMode>(World->GetAuthGameMode());
 }

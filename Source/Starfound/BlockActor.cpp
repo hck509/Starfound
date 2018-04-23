@@ -1,6 +1,5 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "BlockActor.h"
+#include "StarfoundGameMode.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/Engine.h"
 
@@ -235,7 +234,77 @@ UBlockActorScene* UStarfoundHelper::GetBlockActorScene(const UObject* WorldConte
 	return ::GetBlockActorScene(WorldContextObject->GetWorld());
 }
 
+UStorageComponent::UStorageComponent()
+{
+	PrimaryComponentTick.bCanEverTick = true;
+}
+
+void UStorageComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
+{
+	Super::OnComponentDestroyed(bDestroyingHierarchy);
+
+	CancelIssuedJobs();
+}
+
+void UStorageComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if (Items.Num() >= ItemCapacity)
+	{
+		CancelIssuedJobs();
+	}
+	else
+	{
+		ABlockActor* Block = Cast<ABlockActor>(GetOwner());
+
+		if (Block && !Block->IsTemporal())
+		{
+			if (IssuedJobIds.Num() == 0)
+			{
+				IssueJobs();
+			}
+		}
+	}
+
+	DrawDebugString(GetWorld(), FVector::ZeroVector, FString::Printf(TEXT("%d/%d,%d"), Items.Num(), ItemCapacity, IssuedJobIds.Num()), GetOwner(), FColor::White, 0, true);
+}
+
 void UStorageComponent::AddItem(EItemType ItemType)
 {
 	Items.Add(ItemType);
+}
+
+void UStorageComponent::IssueJobs()
+{
+	CancelIssuedJobs();
+
+	AStarfoundGameMode* GameMode = GetStarfoundGameMode(GetWorld());
+
+	if (!GameMode)
+	{
+		return;
+	}
+
+	FStarfoundJob Job;
+	Job.InitDelivery(Cast<ABlockActor>(GetOwner()), EItemType::None);
+
+	int32 JobId = GameMode->GetJobQueue()->AddJob(Job);
+
+	IssuedJobIds.Add(JobId);
+}
+
+void UStorageComponent::CancelIssuedJobs()
+{
+	AStarfoundGameMode* GameMode = GetStarfoundGameMode(GetWorld());
+
+	if (!GameMode)
+	{
+		return;
+	}
+
+	for (int32 Id : IssuedJobIds)
+	{
+		GameMode->GetJobQueue()->RemoveJob(Id);
+	}
 }

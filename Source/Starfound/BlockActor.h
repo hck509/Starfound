@@ -14,6 +14,11 @@ class UStorageComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:
+	UStorageComponent();
+
+	virtual void OnComponentDestroyed(bool bDestroyingHierarchy) override;
+	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
+
 	UFUNCTION(BlueprintCallable)
 	int32 GetItemCapacity() const { return ItemCapacity; }
 
@@ -24,11 +29,17 @@ public:
 	void AddItem(EItemType ItemType);
 
 private:
+	void IssueJobs();
+	void CancelIssuedJobs();
+
 	UPROPERTY(EditDefaultsOnly)
 	int32 ItemCapacity;
 
 	UPROPERTY()
 	TArray<EItemType> Items;
+
+	UPROPERTY()
+	TArray<int32> IssuedJobIds;
 };
 
 UCLASS()
@@ -52,6 +63,8 @@ public:
 	void OnBlockDestructedBP();
 
 	void SetTemporal(bool bInTemporal) { bTemporal = bInTemporal; }
+
+	UFUNCTION(BlueprintCallable)
 	bool IsTemporal() const { return bTemporal; }
 
 private:
@@ -144,7 +157,6 @@ private:
 };
 
 UBlockActorScene* GetBlockActorScene(UWorld* World);
-
 
 UCLASS()
 class UStarfoundHelper : public UObject

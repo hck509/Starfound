@@ -24,6 +24,9 @@ struct FStarfoundJob
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadOnly)
+	int32 JobId;
+
+	UPROPERTY(BlueprintReadOnly)
 	EStarfoundJobType JobType;
 
 	UPROPERTY(BlueprintReadOnly)
@@ -42,7 +45,7 @@ struct FStarfoundJob
 
 	// Deliver
 	UPROPERTY(BlueprintReadOnly)
-	TWeakObjectPtr<AItemActor> DeliverSourceItemActor;
+	EItemType DeliverItemType;	// None item type means everything
 
 	UPROPERTY(BlueprintReadOnly)
 	TWeakObjectPtr<ABlockActor> DeliverTargetBlockActor;
@@ -51,6 +54,7 @@ struct FStarfoundJob
 
 	void InitConstruct(const FIntPoint& InLocation, const TSubclassOf<ABlockActor>& InConstructBlockClass);
 	void InitDestruct(TWeakObjectPtr<class ABlockActor> Actor);
+	void InitDelivery(ABlockActor* Actor, EItemType ItemType);
 };
 
 UCLASS(BlueprintType)
@@ -59,11 +63,16 @@ class UStarfoundJobQueue : public UObject
 public:
 	GENERATED_BODY()
 
+	UStarfoundJobQueue();
+
 	UFUNCTION(BlueprintCallable)
 	const TArray<FStarfoundJob>& GetJobQueue() const { return JobQueue; }
 
 	UFUNCTION(BlueprintCallable)
-	void AddJob(const FStarfoundJob& Job);
+	int32 AddJob(const FStarfoundJob& Job);
+
+	UFUNCTION(BlueprintCallable)
+	bool RemoveJob(int32 JobId);
 
 	UFUNCTION(BlueprintCallable)
 	bool AssignJob(AStarfoundPawn* Pawn);
@@ -82,6 +91,8 @@ public:
 	void DebugDraw() const;
 
 private:
+	int32 NextJobId;
+
 	TArray<FStarfoundJob> JobQueue;
 
 	UPROPERTY()
@@ -158,3 +169,5 @@ private:
 	UPROPERTY(Transient)
 	UStarfoundJobExecutor* JobExecutor;
 };
+
+AStarfoundGameMode* GetStarfoundGameMode(UWorld* World);
