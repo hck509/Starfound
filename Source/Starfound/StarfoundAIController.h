@@ -28,7 +28,7 @@ private:
 	void AssignJobIfNeeded();
 
 	UFUNCTION(BlueprintCallable)
-	void MoveToJobLocation();
+	bool MoveToJobLocation();
 
 	UFUNCTION(BlueprintCallable)
 	void WorkOnJobIfInRange(float DeltaSeconds);

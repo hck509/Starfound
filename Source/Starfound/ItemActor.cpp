@@ -22,5 +22,7 @@ void AItemActor::Tick(float DeltaTime)
 void AItemActor::InitItem(EItemType InItemType)
 {
 	ItemType = InItemType;
+
+	OnInitItemBP();
 }
 

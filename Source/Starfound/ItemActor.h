@@ -28,6 +28,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void InitItem(EItemType InItemType);
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnInitItemBP();
+
 	UFUNCTION(BlueprintCallable)
 	EItemType GetItemType() const { return ItemType; }
 

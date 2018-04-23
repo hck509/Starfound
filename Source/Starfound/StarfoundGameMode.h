@@ -59,6 +59,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool AssignJob(AStarfoundPawn* Pawn);
 
+	UFUNCTION(BlueprintCallable)
 	void AssignAnotherJob(AStarfoundPawn* Pawn);
 
 	UFUNCTION(BlueprintCallable)

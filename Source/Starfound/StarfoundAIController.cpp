@@ -114,19 +114,19 @@ void AStarfoundAIController::AssignJobIfNeeded()
 	}
 }
 
-void AStarfoundAIController::MoveToJobLocation()
+bool AStarfoundAIController::MoveToJobLocation()
 {
 	AStarfoundPawn* Pawn = Cast<AStarfoundPawn>(GetPawn());
 
 	if (!Pawn)
 	{
-		return;
+		return false;
 	}
 
 	AStarfoundGameMode* GameMode = Cast<AStarfoundGameMode>(GetWorld()->GetAuthGameMode());
 	if (!GameMode)
 	{
-		return;
+		return false;
 	}
 
 	FStarfoundJob Job;
@@ -135,14 +135,14 @@ void AStarfoundAIController::MoveToJobLocation()
 	if (!bJobAssigned)
 	{
 		DrawDebugString(GetWorld(), FVector(0, 0, 150), "Idle", Pawn, FColor::White, 0, true);
-		return;
+		return false;
 	}
 
 	UBlockActorScene* BlockScene = GetBlockActorScene(GetWorld());
 
 	if (!BlockScene)
 	{
-		return;
+		return false;
 	}
 
 	const FVector2D JobLocation2D = BlockScene->OriginSpaceGridToWorldSpace2D(Job.Location);
@@ -199,14 +199,20 @@ void AStarfoundAIController::MoveToJobLocation()
 		{
 			DrawDebugString(GetWorld(), FVector(0, 0, 150), "Noway", Pawn, FColor::White, 0, true);
 
-			GameMode->GetJobQueue()->AssignAnotherJob(Pawn);
+			//GameMode->GetJobQueue()->AssignAnotherJob(Pawn);
+
+			return false;
 		}
 		else
 		{
 			const bool bPathFound = MoveToLocation(TargetLocation);
 			ensure(bPathFound);
+
+			return bPathFound;
 		}
 	}
+
+	return true;
 }
 
 void AStarfoundAIController::WorkOnJobIfInRange(float DeltaSeconds)
