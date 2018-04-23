@@ -13,6 +13,8 @@ AStarfoundPawn::AStarfoundPawn()
 	AIControllerClass = AStarfoundAIController::StaticClass();
 
 	MovementComponent = CreateDefaultSubobject<UStarfoundMovementComponent>("StarfoundMovement");
+
+	WorkPercentagePerSeconds = 50.0f;
 }
 
 // Called when the game starts or when spawned

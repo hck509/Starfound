@@ -256,7 +256,8 @@ void AStarfoundAIController::WorkOnJobIfInRange(float DeltaSeconds)
 
 	if (bJobInReach)
 	{
-		const float ProgressPercentage = GameMode->GetJobQueue()->ProgressAssignedJob(Pawn, DeltaSeconds * 30.0f);
+		const float WorkPercentagePerSeconds = Pawn->GetWorkPercentagePerSeconds();
+		const float ProgressPercentage = GameMode->GetJobQueue()->ProgressAssignedJob(Pawn, DeltaSeconds * WorkPercentagePerSeconds);
 		
 		if (ProgressPercentage > 100.0f)
 		{
