@@ -2,7 +2,17 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "ItemActor.h"
 #include "StarfoundPawn.generated.h"
+
+USTRUCT(BlueprintType)
+struct FStarfoundInventory
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly)
+	TMap<EItemType, int32> Items;
+};
 
 UCLASS()
 class STARFOUND_API AStarfoundPawn : public APawn
@@ -27,10 +37,25 @@ public:
 
 	float GetWorkPercentagePerSeconds() const { return WorkPercentagePerSeconds; }
 
+	UFUNCTION(BlueprintCallable)
+	FStarfoundInventory& GetInventory() { return Inventory; }
+
+	UFUNCTION(BlueprintCallable)
+	const FStarfoundInventory& GetInventoryConst() const { return Inventory; }
+
+	UFUNCTION(BlueprintCallable)
+	bool IsItemActorInRangeToPickup(const AItemActor* ItemActor) const;
+
+	UFUNCTION(BlueprintCallable)
+	bool PickupItemActor(AItemActor* ItemActor);
+
 private:
 	UPROPERTY()
 	UStarfoundMovementComponent* MovementComponent;
 
 	UPROPERTY(EditDefaultsOnly)
 	float WorkPercentagePerSeconds;
+
+	UPROPERTY()
+	FStarfoundInventory Inventory;
 };

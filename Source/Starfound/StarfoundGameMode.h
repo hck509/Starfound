@@ -13,9 +13,10 @@
 UENUM(BlueprintType)
 enum class EStarfoundJobType : uint8
 {
+	None,
 	Construct,
 	Destruct,
-	Deliver
+	GatherItem
 };
 
 USTRUCT(BlueprintType)
@@ -43,18 +44,18 @@ struct FStarfoundJob
 	UPROPERTY(BlueprintReadOnly)
 	TWeakObjectPtr<ABlockActor> DestructBlockActor;
 
-	// Deliver
+	// Gather
 	UPROPERTY(BlueprintReadOnly)
-	EItemType DeliverItemType;	// None item type means everything
+	EItemType GatherItemType;	// None item type means everything
 
 	UPROPERTY(BlueprintReadOnly)
-	TWeakObjectPtr<ABlockActor> DeliverTargetBlockActor;
+	TWeakObjectPtr<ABlockActor> GatherTargetBlockActor;
 
 	FStarfoundJob();
 
 	void InitConstruct(const FIntPoint& InLocation, const TSubclassOf<ABlockActor>& InConstructBlockClass);
 	void InitDestruct(TWeakObjectPtr<class ABlockActor> Actor);
-	void InitDelivery(ABlockActor* Actor, EItemType ItemType);
+	void InitGather(ABlockActor* Actor, EItemType ItemType);
 };
 
 UCLASS(BlueprintType)
@@ -105,11 +106,12 @@ class UStarfoundJobExecutor : public UObject
 public:
 	GENERATED_BODY()
 
-	void FinishJob(const FStarfoundJob& Job);
+	void FinishJob(AStarfoundPawn* Pawn, const FStarfoundJob& Job);
 
 private:
-	void HandleConstruct(const FStarfoundJob& Job);
-	void HandleDestruct(const FStarfoundJob& Job);
+	void HandleConstruct(AStarfoundPawn* Pawn, const FStarfoundJob& Job);
+	void HandleDestruct(AStarfoundPawn* Pawn, const FStarfoundJob& Job);
+	void HandleGather(AStarfoundPawn* Pawn, const FStarfoundJob& Job);
 };
 
 USTRUCT(BlueprintType)

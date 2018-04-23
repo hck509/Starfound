@@ -221,23 +221,36 @@ void FStarfoundJob::InitDestruct(TWeakObjectPtr<class ABlockActor> Actor)
 	Location = BlockScene->WorldSpaceToOriginSpaceGrid(Actor->GetActorLocation());
 }
 
-void FStarfoundJob::InitDelivery(ABlockActor* Actor, EItemType ItemType)
+void FStarfoundJob::InitGather(ABlockActor* Actor, EItemType ItemType)
 {
-	JobType = EStarfoundJobType::Deliver;
-	DeliverItemType = ItemType;
-	DeliverTargetBlockActor = Actor;
+	JobType = EStarfoundJobType::GatherItem;
+	GatherItemType = ItemType;
+	GatherTargetBlockActor = Actor;
+
+	UBlockActorScene* BlockScene = GetBlockActorScene(Actor->GetWorld());
+
+	if (!BlockScene)
+	{
+		return;
+	}
+
+	Location = BlockScene->WorldSpaceToOriginSpaceGrid(Actor->GetActorLocation());
 }
 
-void UStarfoundJobExecutor::FinishJob(const FStarfoundJob& Job)
+void UStarfoundJobExecutor::FinishJob(AStarfoundPawn* Pawn, const FStarfoundJob& Job)
 {
 	switch (Job.JobType)
 	{
 	case EStarfoundJobType::Construct:
-		HandleConstruct(Job);
+		HandleConstruct(Pawn, Job);
 		break;
 
 	case EStarfoundJobType::Destruct:
-		HandleDestruct(Job);
+		HandleDestruct(Pawn, Job);
+		break;
+
+	case EStarfoundJobType::GatherItem:
+		HandleGather(Pawn, Job);
 		break;
 
 	default:
@@ -245,7 +258,7 @@ void UStarfoundJobExecutor::FinishJob(const FStarfoundJob& Job)
 	}
 }
 
-void UStarfoundJobExecutor::HandleConstruct(const FStarfoundJob& Job)
+void UStarfoundJobExecutor::HandleConstruct(AStarfoundPawn* Pawn, const FStarfoundJob& Job)
 {
 	UBlockActorScene* BlockScene = GetBlockActorScene(GetWorld());
 
@@ -264,12 +277,36 @@ void UStarfoundJobExecutor::HandleConstruct(const FStarfoundJob& Job)
 		FTransform(FVector(0, Location2D.X, Location2D.Y)), SpawnParameters);
 }
 
-void UStarfoundJobExecutor::HandleDestruct(const FStarfoundJob& Job)
+void UStarfoundJobExecutor::HandleDestruct(AStarfoundPawn* Pawn, const FStarfoundJob& Job)
 {
 	if (Job.DestructBlockActor.IsValid() && !Job.DestructBlockActor->IsPendingKillPending())
 	{
 		Job.DestructBlockActor->OnBlockDestructed();
 		Job.DestructBlockActor->Destroy();
+	}
+}
+
+void UStarfoundJobExecutor::HandleGather(AStarfoundPawn* Pawn, const FStarfoundJob& Job)
+{
+	if (!Job.GatherTargetBlockActor.IsValid())
+	{
+		return;
+	}
+
+	int32* NumItems = Pawn->GetInventory().Items.Find(Job.GatherItemType);
+
+	if (!NumItems || *NumItems <= 0)
+	{
+		ensure(0);
+		return;
+	}
+
+	--(*NumItems);
+
+	UStorageComponent* Storage = Job.GatherTargetBlockActor->FindComponentByClass<UStorageComponent>();
+	if (ensure(Storage))
+	{
+		Storage->AddItem(Job.GatherItemType);
 	}
 }
 

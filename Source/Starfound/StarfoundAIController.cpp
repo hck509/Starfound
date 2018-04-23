@@ -2,6 +2,7 @@
 #include "StarfoundGameMode.h"
 #include "StarfoundMovementComponent.h"
 #include "StarfoundPawn.h"
+#include "ItemActor.h"
 #include "DrawDebugHelpers.h"
 
 const static float JobReachDistance = 350;
@@ -58,7 +59,7 @@ void AStarfoundAIController::Tick(float DeltaSeconds)
 
 bool AStarfoundAIController::MoveToLocation(const FVector& TargetLocation)
 {
-	AStarfoundGameMode* GameMode = Cast<AStarfoundGameMode>(GetWorld()->GetAuthGameMode());
+	AStarfoundGameMode* GameMode = GetStarfoundGameMode(GetWorld());
 	if (!GameMode)
 	{
 		return false;
@@ -88,6 +89,96 @@ bool AStarfoundAIController::MoveToLocation(const FVector& TargetLocation)
 	}
 
 	return bPathFound;
+}
+
+bool AStarfoundAIController::MoveToPickupItem(const AItemActor* ItemActor)
+{
+	if (!ItemActor)
+	{
+		return false;
+	}
+
+	AStarfoundPawn* Pawn = Cast<AStarfoundPawn>(GetPawn());
+
+	if (!Pawn)
+	{
+		return false;
+	}
+
+	AStarfoundGameMode* GameMode = Cast<AStarfoundGameMode>(GetWorld()->GetAuthGameMode());
+	if (!GameMode)
+	{
+		return false;
+	}
+
+	UBlockActorScene* BlockScene = GetBlockActorScene(GetWorld());
+
+	if (!BlockScene)
+	{
+		return false;
+	}
+
+	const FVector ItemLocation = ItemActor->GetActorLocation();
+	const FIntPoint ItemLocationInGrid = BlockScene->WorldSpaceToOriginSpaceGrid(ItemLocation);
+
+	DrawDebugLine(GetWorld(), Pawn->GetActorLocation(), ItemLocation, FColor::Green);
+
+	FVector TargetLocation;
+	bool bFoundValidTargetLocation = false;
+
+	float TargetLocationMinDistance = 10E5;
+
+	for (int32 X = -1; X <= 1; ++X)
+	{
+		for (int32 Y = -3; Y <= 1; ++Y)
+		{
+			if (X == 0 && Y == 0)
+			{
+				continue;
+			}
+
+			const FIntPoint Location = ItemLocationInGrid + FIntPoint(X, Y);
+
+			const bool bFoundValidNeighbor = GameMode->GetNavigation()->IsValidGridLocation(Location);
+			const bool bHasFloor = BlockScene->GetBlock(Location.X, Location.Y - 1);
+
+			if (bFoundValidNeighbor && bHasFloor)
+			{
+				const FVector TargetLocationCandidate = BlockScene->OriginSpaceGridToWorldSpace(Location);
+
+				TArray<FVector2D> PathPoints;
+				const bool bPathFound = GameMode->GetNavigation()->FindPath(Pawn->GetActorLocation(), TargetLocationCandidate, PathPoints);
+
+				if (bPathFound)
+				{
+					const float Distance = (Pawn->GetActorLocation() - TargetLocationCandidate).Size();
+
+					if (Distance < TargetLocationMinDistance)
+					{
+						TargetLocationMinDistance = Distance;
+						TargetLocation = TargetLocationCandidate;
+						bFoundValidTargetLocation = true;
+					}
+				}
+			}
+		}
+	}
+
+	if (!bFoundValidTargetLocation)
+	{
+		DrawDebugString(GetWorld(), FVector(0, 0, 150), "Noway", Pawn, FColor::White, 0, true);
+
+		return false;
+	}
+	else
+	{
+		const bool bPathFound = MoveToLocation(TargetLocation);
+		ensure(bPathFound);
+
+		return bPathFound;
+	}
+
+	return true;
 }
 
 void AStarfoundAIController::AssignJobIfNeeded()
@@ -261,7 +352,7 @@ void AStarfoundAIController::WorkOnJobIfInRange(float DeltaSeconds)
 		
 		if (ProgressPercentage > 100.0f)
 		{
-			GameMode->GetJobExecutor()->FinishJob(Job);
+			GameMode->GetJobExecutor()->FinishJob(Pawn, Job);
 			GameMode->GetJobQueue()->PopAssignedJob(Pawn);
 
 			bWorking = false;

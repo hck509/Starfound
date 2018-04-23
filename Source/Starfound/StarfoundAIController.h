@@ -6,9 +6,6 @@
 #include "Classes/AIController.h"
 #include "StarfoundAIController.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class STARFOUND_API AStarfoundAIController : public AAIController
 {
@@ -23,6 +20,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	bool IsWorking() const { return bWorking; }
+
+	UFUNCTION(BlueprintCallable)
+	bool MoveToPickupItem(const class AItemActor* ItemActor);
 
 private:
 	void AssignJobIfNeeded();

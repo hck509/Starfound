@@ -43,7 +43,7 @@ private:
 	 */
 	TArray<FVector2D> FollowingPath;
 
-	UPROPERTY()
+	UPROPERTY(EditDefaultsOnly)
 	float MaxSpeed;
 
 	UPROPERTY()

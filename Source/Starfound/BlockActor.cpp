@@ -287,7 +287,7 @@ void UStorageComponent::IssueJobs()
 	}
 
 	FStarfoundJob Job;
-	Job.InitDelivery(Cast<ABlockActor>(GetOwner()), EItemType::None);
+	Job.InitGather(Cast<ABlockActor>(GetOwner()), EItemType::None);
 
 	int32 JobId = GameMode->GetJobQueue()->AddJob(Job);
 

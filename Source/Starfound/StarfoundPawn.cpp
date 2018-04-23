@@ -28,6 +28,8 @@ void AStarfoundPawn::BeginPlay()
 void AStarfoundPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	DrawDebugString(GetWorld(), FVector::ZeroVector, FString::Printf(TEXT("Inven:%d"), Inventory.Items.Num()), this, FColor::White, 0, true);
 }
 
 // Called to bind functionality to input
@@ -45,4 +47,55 @@ class AStarfoundAIController* AStarfoundPawn::GetAIController() const
 class UStarfoundMovementComponent* AStarfoundPawn::GetStarfoundMovementController() const
 {
 	return MovementComponent;
+}
+
+bool AStarfoundPawn::IsItemActorInRangeToPickup(const AItemActor* ItemActor) const
+{
+	UBlockActorScene* BlockScene = GetBlockActorScene(GetWorld());
+
+	if (!BlockScene)
+	{
+		return false;
+	}
+
+	const FIntPoint PawnLocation = BlockScene->WorldSpaceToOriginSpaceGrid(GetActorLocation());
+	const FIntPoint ItemLocation = BlockScene->WorldSpaceToOriginSpaceGrid(ItemActor->GetActorLocation());
+
+	const FIntPoint LocationDiff = PawnLocation - ItemLocation;
+
+	if (FMath::Abs(LocationDiff.X) <= 1 && FMath::Abs(LocationDiff.Y) <= 3)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool AStarfoundPawn::PickupItemActor(AItemActor* ItemActor)
+{
+	if (!ensure(ItemActor))
+	{
+		return false;
+	}
+
+	if (!ensure(IsItemActorInRangeToPickup(ItemActor)))
+	{
+		return false;
+	}
+
+	const int32 NumItemsToAdd = 1;
+
+	int32* Value = Inventory.Items.Find(ItemActor->GetItemType());
+	if (Value)
+	{
+		*Value += NumItemsToAdd;
+	}
+	else
+	{
+		Inventory.Items.Add(ItemActor->GetItemType(), NumItemsToAdd);
+	}
+
+	ItemActor->Destroy();
+
+	return true;
 }

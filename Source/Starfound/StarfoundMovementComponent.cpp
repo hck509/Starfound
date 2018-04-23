@@ -6,7 +6,7 @@ UStarfoundMovementComponent::UStarfoundMovementComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 
-	MaxSpeed = 100;
+	MaxSpeed = 150;
 	FallingSpeed = 0;
 }
 
