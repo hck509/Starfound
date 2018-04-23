@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "BlockActor.h"
+#include "ItemActor.h"
 #include "StarfoundPawn.h"
 #include "Nav/Navigation.h"
 #include "StarfoundGameMode.generated.h"
@@ -13,7 +14,8 @@ UENUM(BlueprintType)
 enum class EStarfoundJobType : uint8
 {
 	Construct,
-	Destruct
+	Destruct,
+	Deliver
 };
 
 USTRUCT(BlueprintType)
@@ -36,7 +38,14 @@ struct FStarfoundJob
 
 	// Destruct
 	UPROPERTY(BlueprintReadOnly)
-	TWeakObjectPtr<class ABlockActor> DestructBlockActor;
+	TWeakObjectPtr<ABlockActor> DestructBlockActor;
+
+	// Deliver
+	UPROPERTY(BlueprintReadOnly)
+	TWeakObjectPtr<AItemActor> DeliverSourceItemActor;
+
+	UPROPERTY(BlueprintReadOnly)
+	TWeakObjectPtr<ABlockActor> DeliverTargetBlockActor;
 
 	FStarfoundJob();
 

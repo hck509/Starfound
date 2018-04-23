@@ -5,7 +5,31 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Engine/AssetUserData.h"
+#include "ItemActor.h"
 #include "BlockActor.generated.h"
+
+UCLASS(meta=(BlueprintSpawnableComponent))
+class UStorageComponent : public UActorComponent
+{
+	GENERATED_BODY()
+
+public:
+	UFUNCTION(BlueprintCallable)
+	int32 GetItemCapacity() const { return ItemCapacity; }
+
+	UFUNCTION(BlueprintCallable)
+	const TArray<EItemType>& GetItems() const { return Items; }
+
+	UFUNCTION(BlueprintCallable)
+	void AddItem(EItemType ItemType);
+
+private:
+	UPROPERTY(EditDefaultsOnly)
+	int32 ItemCapacity;
+
+	UPROPERTY()
+	TArray<EItemType> Items;
+};
 
 UCLASS()
 class STARFOUND_API ABlockActor : public AActor

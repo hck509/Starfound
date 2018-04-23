@@ -234,3 +234,8 @@ UBlockActorScene* UStarfoundHelper::GetBlockActorScene(const UObject* WorldConte
 
 	return ::GetBlockActorScene(WorldContextObject->GetWorld());
 }
+
+void UStorageComponent::AddItem(EItemType ItemType)
+{
+	Items.Add(ItemType);
+}
