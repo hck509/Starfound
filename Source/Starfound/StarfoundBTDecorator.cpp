@@ -27,7 +27,6 @@ bool UPawnHasGatherItemBTDecorator::CalculateRawConditionValue(UBehaviorTreeComp
 
 	if (!bHasJob || Job.JobType != EStarfoundJobType::GatherItem)
 	{
-		ensure(0);
 		return false;
 	}
 
